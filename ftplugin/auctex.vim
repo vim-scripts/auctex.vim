@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	July 11, 2003
-" Version:  2.0006
+" Last Change:	March 18, 2004
+" Version:  2.0007
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 
@@ -71,10 +71,10 @@ let b:windows = 0
 " completion.  But if the previous character is a blank, or if you are at the
 " end of the line, you get a tab.
 
-inoremap <Tab> <C-R>=TexInsertTabWrapper ('backward')<CR>
-inoremap <M-Space> <C-R>=TexInsertTabWrapper ('backward')<CR>
-inoremap <C-Space> <C-R>=TexInsertTabWrapper ('forward')<CR>
-function! TexInsertTabWrapper(direction) 
+inoremap <Tab> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
+inoremap <M-Space> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
+inoremap <C-Space> <C-R>=<SID>TexInsertTabWrapper ('forward')<CR>
+function! s:TexInsertTabWrapper(direction) 
 
     " Check to see if you're in a math environment.  Doesn't work for $$...$$.
     let line = getline('.')
@@ -101,7 +101,14 @@ function! TexInsertTabWrapper(direction)
     endif
 
     if dollar == 1   " If you're in a $..$ environment
-	return "\<Esc>f$a"
+        if ending[0] =~ ')\|]\||\|\}'
+	    return "\<Right>"
+	elseif ending =~ '{'
+	    return "\<Esc>f{a"
+	else
+	    return "\<Esc>f$a"
+	end
+	"return "\<Esc>f$a"
     elseif math == 1    " If you're in a regular math environment.
 	if ending =~ '^\s*&'
 	    return "\<Esc>f&a"
@@ -344,14 +351,14 @@ inoremap <buffer> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
 inoremap <buffer> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
 inoremap <buffer> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
-noremap <buffer> <C-F1> :call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
-inoremap <buffer> <C-F1> <Esc>:call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
-noremap <buffer> <C-F2> :call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <C-F2> <Esc>:call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-noremap <buffer> <C-F3> :call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-inoremap <buffer> <C-F3> <Esc>:call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-noremap <buffer> <C-F4> :call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <C-F4> <Esc>:call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer> <C-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
+inoremap <buffer> <C-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
+noremap <buffer> <C-F2> :silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <C-F2> <Esc>:silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer> <C-F3> :silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+inoremap <buffer> <C-F3> <Esc>:silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+noremap <buffer> <C-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <C-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
 inoremap <buffer> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
 inoremap <buffer> <F7> \noindent<CR>\textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
@@ -501,7 +508,7 @@ function! s:SetEnvironment(env)
   put! =indent . '\begin{' . env . '}'
   +put =indent . '\end{' . env . '}'
   -s/^/\=indent/
-  norm $
+  normal $
   if env == 'array'
     -s/$/{}/
     " The "$hl" magic here places the cursor at the last character
@@ -623,12 +630,11 @@ inoremap <buffer> <Leader>U \Upsilon
 inoremap <buffer> <Leader>X \Xi
 inoremap <buffer> <Leader>Y \Psi
 inoremap <buffer> <Leader>0 \emptyset
-inoremap <buffer> <Leader>2 \sqrt{}<Left>
+inoremap <buffer> <Leader>1 \left
+inoremap <buffer> <Leader>2 \right
+inoremap <buffer> <Leader>3 \Big
 inoremap <buffer> <Leader>6 \partial
 inoremap <buffer> <Leader>8 \infty
-inoremap <buffer> <Leader><F1> \left
-inoremap <buffer> <Leader><F2> \right
-inoremap <buffer> <Leader><F3> \Big
 inoremap <buffer> <Leader>/ \frac{}{}<Esc>F}i
 inoremap <buffer> <Leader>% \frac{}{}<Esc>F}i
 inoremap <buffer> <Leader>@ \circ
@@ -642,8 +648,8 @@ inoremap <buffer> <Leader>- \bigcap
 inoremap <buffer> <Leader>+ \bigcup
 inoremap <buffer> <Leader>( \subset
 inoremap <buffer> <Leader>) \supset
-inoremap <buffer> <Leader>< \le
-inoremap <buffer> <Leader>> \ge
+inoremap <buffer> <Leader>< \leq
+inoremap <buffer> <Leader>> \geq
 inoremap <buffer> <Leader>, \nonumber
 inoremap <buffer> <Leader>: \dots
 inoremap <buffer> <Leader>~ \tilde{}<Left>
@@ -718,22 +724,27 @@ map <buffer> gw :call <SID>TeX_par()<CR>
 
 " }}}
 " "========================================================================="
-" Alt Macros   {{{
+" Alt and Insert Macros   {{{
 
+" We use Alt-v, since Alt-b interferes with the Buffer menu.
 " Boldface:  (3 alternative macros)
 " In the first, \mathbf{} appears.
 " In the second, you type the letter, and it capitalizes the letter
 " and surrounds it with \mathbf{}
-" In the third, type <M-b>, you're asked for a character to be capitalized.
-" inoremap <buffer> <M-b> \mathbf{}<Left>
-inoremap <buffer> <M-b> <Left>\mathbf{<Right>}<Esc>hvUla
-vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
+" In the third, type <M-v>, you're asked for a character to be capitalized.
+" inoremap <buffer> <M-v> \mathbf{}<Left>
+" inoremap <buffer> <Insert>b \mathbf{}<Left>
+inoremap <buffer> <M-v> <Left>\mathbf{<Right>}<Esc>hvUla
+inoremap <buffer> <Insert>b <Left>\mathbf{<Right>}<Esc>hvUla
+vnoremap <buffer> <M-v> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
+vnoremap <buffer> <Insert>b <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 "function! s:mathbf()
 "    echo 'Mathbf: '
 "    let c = nr2char(getchar())
 "    return "\\mathbf{".c."}\<Esc>hvUla"
 "endfunction
 "inoremap <buffer> <M-b> <C-R>=<SID>mathbf()<CR>
+"inoremap <buffer> <Insert>b <C-R>=<SID>mathbf()<CR>
 
 " Cal:  (3 alternative macros:  see Boldface)
 " In the first, \mathcal{} appears.
@@ -744,7 +755,9 @@ vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 " inoremap <buffer> <M-c> \mathcal{}<Left>
 " inoremap <buffer> <M-c> <Left>\mathcal{<Right>}<Esc>h~a
 vnoremap <buffer> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
+vnoremap <buffer> <Insert>c <C-C>`>a}<Esc>`<i\mathcal{<Esc>
 inoremap <buffer> <M-c> <C-R>=<SID>MathCal()<CR>
+inoremap <buffer> <Insert>c <C-R>=<SID>MathCal()<CR>
 function! s:MathCal()
     if getline('.')[col('.')-2] =~ '[a-zA-Z0-9]'
 	return "\<Left>\\mathcal{\<Right>}\<Esc>hvUla"
@@ -757,7 +770,8 @@ endfunction
 "    let c = nr2char(getchar())
 "    return "\\mathcal{".c."}\<Esc>hvUla"
 "endfunction
-"inoremap <buffer> <M-b> <C-R>=<SID>mathcal()<CR>
+"inoremap <buffer> <M-c> <C-R>=<SID>mathcal()<CR>
+"inoremap <buffer> <Insert>c <C-R>=<SID>mathcal()<CR>
 
 "  This macro asks the user for the input to \mathbf{}
 "inoremap <buffer> <M-b> <C-R>=<SID>WithBrackets("mathbf")<CR>
@@ -766,27 +780,31 @@ endfunction
 "    return "\\" . a:string . '{' . user . '}'
 "endfunction
 
-" Alt-f This is for _{}^{}.  It moves you to the second parenthesis.
-inoremap <buffer> <M-f> <Esc>f{a
-
-" Alt-h inserts \widehat{}
+" Alt-h or Insert-h inserts \widehat{}
 inoremap <buffer> <M-h> \widehat{}<Left>
+inoremap <buffer> <Insert>h \widehat{}<Left>
 
-" Alt-i inserts \item 
+" Alt-i or Insert-i inserts \item 
 inoremap <buffer> <M-i> \item
+inoremap <buffer> <Insert>i \item
 
-" Alt-m inserts \mbox{}
+" Alt-m or Insert-m inserts \mbox{}
 inoremap <buffer> <M-m> \mbox{}<Left>
+inoremap <buffer> <Insert>m \mbox{}<Left>
 vnoremap <buffer> <M-m> <C-C>`>a}<Esc>`<i\mbox{<Esc>
+vnoremap <buffer> <Insert>m <C-C>`>a}<Esc>`<i\mbox{<Esc>
 
-" Alt-o inserts \overline{}
+" Alt-o or Insert-o inserts \overline{}
 inoremap <buffer> <M-o> \overline{}<Left>
+inoremap <buffer> <Insert>o \overline{}<Left>
 
-" Alt-r inserts (\ref{})
+" Alt-r or Insert-r inserts (\ref{})
 " There are 2 versions.
 " The second one inserts \ref{} if the preceding word is Lemma or the like.
 "inoremap <buffer> <M-r> (\ref{})<Left><Left>
+"inoremap <buffer> <Insert>r (\ref{})<Left><Left>
 inoremap <buffer> <M-r> <C-R>=<SID>TexRef()<CR><Esc>F{a
+inoremap <buffer> <Insert>r <C-R>=<SID>TexRef()<CR><Esc>F{a
 function! s:TexRef()
     let insert = '(\ref{})'
     let lemma = strpart(getline("."),col(".")-7,6)
@@ -796,27 +814,116 @@ function! s:TexRef()
     return insert
 endfunction
 
-" Alt-s inserts \sqrt{}
+" Alt-s or Insert-s inserts \sqrt{}
 inoremap <buffer> <M-s> \sqrt{}<Left>
+inoremap <buffer> <Insert>s \sqrt{}<Left>
 
-" Alt-t inserts Textbf
+" Insert-t or Insert-t inserts Textbf
+inoremap <buffer> <Insert>t \textbf{}<Left>
 inoremap <buffer> <M-t> \textbf{}<Left>
+vnoremap <buffer> <Insert>t <C-C>`>a}<Esc>`<i\textbf{<Esc>
 vnoremap <buffer> <M-t> <C-C>`>a}<Esc>`<i\textbf{<Esc>
 
 " This is for _{}^{}.  It gets rid of the ^{} part
 inoremap <buffer> <M-x> <Esc>f^cf}
+inoremap <buffer> <Insert>x <Esc>f^cf}
 
-" Alt-u inserts \underline
+" Alt-u or Insert-u inserts \underline
 inoremap <buffer> <M-u> \underline{}<Left>
+inoremap <buffer> <Insert>u \underline{}<Left>
 
-" Alt-- (Alt-minus) inserts _{}^{}
+" Alt- or Insert- (Alt-minus or Insert-minus) inserts _{}^{}
 inoremap <buffer> <M--> _{}^{}<Esc>3hi
+inoremap <buffer> <Insert>- _{}^{}<Esc>3hi
 
-" Alt-; inserts \dot{}
+" Alt-; or Insert-; inserts \dot{}
 inoremap <buffer> <M-;> \dot{}<Left>
+inoremap <buffer> <Insert>; \dot{}<Left>
 
-" Alt-<Right> inserts \lim_{}
+" Alt-<Right> or Insert-<Right> inserts \lim_{}
 inoremap <buffer> <M-Right> \lim_{}<Left>
+inoremap <buffer> <Insert><Right> \lim_{}<Left>
+
+" }}}
+" "========================================================================="
+" Alt-l or Insert-l inserts \left...\right (3 alternatives)   {{{
+
+" In the first version, you type Alt-l and then the bracket
+" In the second version, you type the bracket, and then Alt-l
+" It also doubles as a command for inserting \label{}, if the previous
+" character is blank.
+" The third version is like the second version.  Use it if you have
+" disabled automatic bracket completion.
+"inoremap <buffer> <M-l>( \left(\right)<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <Insert>l( \left(\right)<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <M-l>\| \left\|\right\|<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <Insert>l\| \left\|\right\|<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <M-l>[ \left[\right]<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <Insert>l[ \left[\right]<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <M-l>{ \left\{\right\}<Left><Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <Insert>l{ \left\{\right\}<Left><Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <M-l>< \langle\rangle<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <Insert>l< \langle\rangle<Left><Left><Left><Left><Left><Left><Left>
+"inoremap <buffer> <M-l>q \lefteqn{
+"inoremap <buffer> <Insert>lq \lefteqn{
+function! s:LeftRight()
+    let line = getline('.')
+    let char = line[col('.')-1]
+    let previous = line[col('.')-2]
+    if char =~ '(\|\['
+        exe "normal! i\\left\<Esc>la\\right\<Esc>6h"
+    elseif char == '|'
+	if previous == '\'
+	    exe "normal! ileft\\\<Esc>"
+	else
+	    exe "normal! i\\left\<Esc>"
+	endif
+	exe "normal! la\\right\<Esc>6h"
+    elseif char == '{'
+	if previous == '\'
+	    exe "normal! ileft\\\<Esc>la\\right\<Esc>6h"
+	else
+	    exe "normal! i\\left\\\<Esc>la\\right\\\<Esc>7h"
+	endif
+    elseif char == '<'
+	exe "normal! s\\langle\\rangle\<Esc>7h"
+    elseif char == 'q'
+	exe "normal! s\\lefteqn\<C-V>{\<Esc>"
+    else
+	exe "normal! a\\label\<C-V>{}\<Esc>h"
+    endif
+endfunction
+inoremap <buffer> <M-l> <Esc>:call <SID>LeftRight()<CR>a
+inoremap <buffer> <Insert>l <Esc>:call <SID>LeftRight()<CR>a
+noremap <buffer> <M-l> :call <SID>PutLeftRight()<CR>
+noremap <buffer> <Insert>l :call <SID>PutLeftRight()<CR>
+vnoremap <buffer> <M-l> <C-C>`>a\right<Esc>`<i\left<Esc>
+vnoremap <buffer> <Insert>l <C-C>`>a\right<Esc>`<i\left<Esc>
+"function! s:LeftRight()
+"let char = getline('.')[col('.')-1]
+"let previous = getline('.')[col('.')-2]
+"if char == '('
+"	exe "normal! i\\left\<Esc>la\\right)\<Esc>7h"
+"elseif char == '['
+"	exe "normal! i\\left\<Esc>la\\right]\<Esc>7h"
+"elseif char == '|'
+"	if previous == '\'
+"		exe "normal! ileft\\\<Esc>la\\right\\\|\<Esc>8h"
+"	else
+"		exe "normal! i\\left\<Esc>la\\right\|\<Esc>7h"
+"	endif
+"elseif char == '{'
+"	if previous == '\'
+"		exe "normal! ileft\\\<Esc>la\\right\\}\<Esc>8h"
+"	else
+"		exe "normal! i\\left\\\<Esc>la\\right\\}\<Esc>8h"
+"	endif
+"elseif char == '<'
+"	exe "normal! s\\langle\\rangle\<Esc>7h"
+"elseif char == 'q'
+"	exe "normal! s\\lefteqn{\<Esc>lx"
+"endif
+"endfunction
 
 " }}}
 " "========================================================================="
@@ -904,78 +1011,6 @@ function! s:SuperBracket()
     return insert
 endfunction
 inoremap <buffer> ^ <C-R>=<SID>SuperBracket()<CR>
-
-" }}}
-" "========================================================================="
-" Alt-l inserts \left...\right (3 alternatives)   {{{
-
-" In the first version, you type Alt-l and then the bracket
-" In the second version, you type the bracket, and then Alt-l
-" It also doubles as a command for inserting \label{}, if the previous
-" character is blank.
-" The third version is like the second version.  Use it if you have
-" disabled automatic bracket completion.
-"inoremap <buffer> <M-l>( \left(\right)<Left><Left><Left><Left><Left><Left><Left>
-"inoremap <buffer> <M-l>\| \left\|\right\|<Left><Left><Left><Left><Left><Left><Left>
-"inoremap <buffer> <M-l>[ \left[\right]<Left><Left><Left><Left><Left><Left><Left>
-"inoremap <buffer> <M-l>{ \left\{\right\}<Left><Left><Left><Left><Left><Left><Left><Left>
-"inoremap <buffer> <M-l>< \langle\rangle<Left><Left><Left><Left><Left><Left><Left>
-"inoremap <buffer> <M-l>q \lefteqn{
-function! s:LeftRight()
-    let line = getline('.')
-    let char = line[col('.')-1]
-    let previous = line[col('.')-2]
-    if char =~ '(\|\['
-        exe "normal! i\\left\<Esc>la\\right\<Esc>6h"
-    elseif char == '|'
-	if previous == '\'
-	    exe "normal! ileft\\\<Esc>"
-	else
-	    exe "normal! i\\left\<Esc>"
-	endif
-	exe "normal! la\\right\<Esc>6h"
-    elseif char == '{'
-	if previous == '\'
-	    exe "normal! ileft\\\<Esc>la\\right\<Esc>6h"
-	else
-	    exe "normal! i\\left\\\<Esc>la\\right\\\<Esc>7h"
-	endif
-    elseif char == '<'
-	exe "normal! s\\langle\\rangle\<Esc>7h"
-    elseif char == 'q'
-	exe "normal! s\\lefteqn\<C-V>{\<Esc>"
-    else
-	exe "normal! a\\label\<C-V>{}\<Esc>h"
-    endif
-endfunction
-inoremap <buffer> <M-l> <Esc>:call <SID>LeftRight()<CR>a
-noremap <buffer> <M-l> :call <SID>PutLeftRight()<CR>
-vnoremap <buffer> <M-l> <C-C>`>a\right<Esc>`<i\left<Esc>
-"function! s:LeftRight()
-"let char = getline('.')[col('.')-1]
-"let previous = getline('.')[col('.')-2]
-"if char == '('
-"	exe "normal! i\\left\<Esc>la\\right)\<Esc>7h"
-"elseif char == '['
-"	exe "normal! i\\left\<Esc>la\\right]\<Esc>7h"
-"elseif char == '|'
-"	if previous == '\'
-"		exe "normal! ileft\\\<Esc>la\\right\\\|\<Esc>8h"
-"	else
-"		exe "normal! i\\left\<Esc>la\\right\|\<Esc>7h"
-"	endif
-"elseif char == '{'
-"	if previous == '\'
-"		exe "normal! ileft\\\<Esc>la\\right\\}\<Esc>8h"
-"	else
-"		exe "normal! i\\left\\\<Esc>la\\right\\}\<Esc>8h"
-"	endif
-"elseif char == '<'
-"	exe "normal! s\\langle\\rangle\<Esc>7h"
-"elseif char == 'q'
-"	exe "normal! s\\lefteqn{\<Esc>lx"
-"endif
-"endfunction
 
 " }}}
 " "========================================================================="
@@ -1114,7 +1149,8 @@ function! s:TexFormatLine(width,current_line,current_column)
 	let counter = 0
 	while counter <= a:width-1
 	    " Pay attention to '$$'.
-	    if string[counter] == '$' && string[counter-1] != '$'
+	    "if string[counter] == '$' && string[counter-1] != '$'
+	    if string[counter] == '$' && string[counter-1] !~ '\$\|\\'
 	       let evendollars = 1 - evendollars
 	       let number_of_dollars = number_of_dollars + 1
 	    endif
@@ -1349,10 +1385,16 @@ iab <buffer> \v \vfill
 " "========================================================================="
 " Personal or Temporary bindings.   {{{
 
-"inoremap <buffer> ;; ;<Space><Space>
+inoremap <buffer> ;; ;<Space><Space>
+
 "inoremap <buffer> ;p p_0
 "inoremap <buffer> ;<CR> <CR>\bigskip<CR>\noindent<CR>\textbf{}<Left>
 "inoremap <buffer> ;e E\left[\right]<Esc>F\i
+"inoremap <buffer> ;i \int_{\mathbf{R}^d}
+"inoremap <buffer> ;I \int_{0}^{\infty}
+"inoremap <buffer> ;p P\left(\right)<Esc>F\i
+"inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
+"inoremap <buffer> ;s S_t^{\alpha}
 
 " }}}
 " "========================================================================="
