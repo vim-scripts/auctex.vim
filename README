@@ -1,0 +1,74 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=162
+
+This is a large collection of Latex macros, with inspiration
+from the emacs package "auctex", among other places.  
+Read the file for details;  I have written many comments.  
+
+By popular demand, here is a more extensive description of
+the key bindings:
+http://www.math.rochester.edu/people/faculty/cmlr/Latex/auctex-vim-keybindings
+
+There is also Vim-LaTeX,
+http://vim-latex.sourceforge.net 
+It is a more extensive package, developed by a group, and I have 
+contributed most of my ideas to this project.  You might prefer 
+my script if you like something smaller, with parts that are (mostly) 
+independent and easy to modify.
+
+Briefly,
+
+In normal mode, F1 - F4 will insert latex templates, unless they are
+already there in the file.  You have to provide these templates yourself.
+
+In insert mode, F1 - F5 will insert environments such as \begin{..} \end{..}.
+
+S-F1 through S-F5 will alter existing environments.
+
+(), $$, [], \[\], {}, \{\}, && are inserted in matching pairs.
+
+Outside of a math environment, tab does word completion, 
+or gives a tab if the previous character is a space or 
+a line beginning.  Within a math environment, 
+tab moves you between parentheses or to the end of the 
+environment.
+
+Many Latex commands are bound to the ` key.  (This comes from auctex).
+For instance, \alpha is bound to `a, and \infty is bound to `8.
+\frac{}{} is bound to `/  .
+
+Menu items allow you to change or delete matching pairs of brackets,
+as well as insert \left..\right automatically.  
+
+Now pressing <Insert> twice will also allow modification of brackets, according 
+to a menu that appears at the bottom.
+
+In normal mode, K runs latex, takes you to the position of the first error (if any),
+and displays the error message with highlighting.
+
+To get \mathbf{R}, type r<Insert>b.  To get \mathcal{R}, type r<Insert>c. 
+<Insert>s produces \sqrt{}.
+
+Some macros are polymorphic.  For instance, when preceded by bracket, 
+<Insert>l will insert \left..\right around the brackets.  Otherwise it 
+will insert \label{} and position the cursor in between the {}.
+Likewise, <Insert>c will produce \cite{} when preceded by a blank or at 
+the beginning of the line;  but, for example, b<Insert>b will produce \mathbf{B}.
+
+There are "smart quotes".  That is, typing " will produce a `` if there is
+a space before the ", and will produce '' otherwise.
+
+You can embrace the visual region with () by typing `(.  This works 
+for other kinds of parentheses, too, as well as $$ and &&.
+
+Long lines are automatically split up to keep $..$ (math expressions)
+on the same line.
+
+There are several abbreviations, such as \b for \bigskip.
+
+You can add your own macros, the macro key is ;
+
+Inspired by LaTeX-Suite, the tab key has some new uses.  Inside \ref{}, it opens 
+a subwindow with the reference keys.  Pressing enter will insert that reference.  
+Ditto for \cite{}, the subwindow will show either your bibitem entries (if any) or 
+your bibtex file.  Pressing enter within the bibtex reference will insert the proper 
+citation key.
