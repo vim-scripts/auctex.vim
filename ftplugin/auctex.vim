@@ -1,15 +1,18 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	December 6, 2002
-" Version:  2.0005
+" Last Change:	July 11, 2003
+" Version:  2.0006
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
+
+
+" Explanation and Customization   {{{
 
 let b:AMSLatex = 0
 let b:DoubleDollars = 0
-" prefix for the "Greek letter" macros (For personal macros, it is ";")
-"let mapleader = "`"
-let mapleader = "`"
+" prefix for the "Greek letter" macros (For personal macros, it is ';')
+let mapleader = '`'
+let my_mapleader = ';'
 
 " Set b:AMSLatex to 1 if you are using AMSlatex.  Otherwise, the program will 
 " attempt to automatically detect the line \usepackage{...amsmath...} 
@@ -34,12 +37,12 @@ let mapleader = "`"
 "
 " The following templates are inserted with <F1> - <F4>, in normal mode.
 " The first 2 are for latex documents, which have "\title{}"
-let b:template_1 = "~/.Vim/latex"
-let b:template_2 = "~/.Vim/min-latex"
+let b:template_1 = '~/.Vim/latex'
+let b:template_2 = '~/.Vim/min-latex'
 " The next template is for a letter, which has "\opening{}"
-let b:template_3 = "~/.Vim/letter"
+let b:template_3 = '~/.Vim/letter'
 " The next template is for a miscelaneous document.
-let b:template_4 = "~/Storage/Latex/exam.tex"
+let b:template_4 = '~/Storage/Latex/exam.tex'
 
 " Vim commands to run latex and the dvi viewer.
 " Must be of the form "! ... % ..."
@@ -60,6 +63,77 @@ let b:tw = 79
 " b:windows below equal to 1
 let b:windows = 0
 
+" }}}
+" "========================================================================="
+" Tab key mapping   {{{
+" In a math environment, the tab key moves between {...} braces, or to the end
+" of the line or the end of the environment.  Otherwise, it does word
+" completion.  But if the previous character is a blank, or if you are at the
+" end of the line, you get a tab.
+
+inoremap <Tab> <C-R>=TexInsertTabWrapper ('backward')<CR>
+inoremap <M-Space> <C-R>=TexInsertTabWrapper ('backward')<CR>
+inoremap <C-Space> <C-R>=TexInsertTabWrapper ('forward')<CR>
+function! TexInsertTabWrapper(direction) 
+
+    " Check to see if you're in a math environment.  Doesn't work for $$...$$.
+    let line = getline('.')
+    let len = strlen(line)
+    let col = col('.') - 1
+    let ending = strpart(line, col, len)
+    let n = 0
+
+    let dollar = 0
+    while n < strlen(ending)
+	if ending[n] == '$'
+	    let dollar = 1 - dollar
+	endif
+	let n = n + 1
+    endwhile
+
+    let math = 0
+    let ln = line('.')
+    while ln > 1 && getline(ln) !~ '\\begin\|\\end\|\\\]\|\\\['
+	let ln = ln - 1
+    endwhile
+    if getline(ln) =~ 'begin{\(eq\|arr\|align\|mult\)\|\\\['
+	let math = 1
+    endif
+
+    if dollar == 1   " If you're in a $..$ environment
+	return "\<Esc>f$a"
+    elseif math == 1    " If you're in a regular math environment.
+	if ending =~ '^\s*&'
+	    return "\<Esc>f&a"
+        elseif ending[0] =~ ')\|]\||'
+	    return "\<Right>"
+	elseif ending =~ '{'
+	    return "\<Esc>f{a"
+	elseif ending =~ '}'
+	    if line =~ '\\label'
+		return "\<Down>"
+	    else
+		return "\<Esc>f}a"
+	    endif
+	elseif col == len    "You are at the end of the line.
+	    return "\<Esc>/\\\\end\\|\\\\]\<CR>$o"
+	else
+	    return "\<C-O>$"
+	endif
+    else   " If you're not in a math environment.
+	" Thanks to Benoit Cerrina
+	if !col || line[col - 1] !~ '\k' 
+	    return "\<Tab>" 
+	elseif a:direction == 'backward'
+	    return "\<C-P>" 
+	else 
+	    return "\<C-N>" 
+	endif 
+
+    endif
+endfunction 
+
+" }}}
 " "========================================================================="
 " Insert Templates   {{{
 
@@ -88,8 +162,8 @@ noremap <buffer> <S-Tab> :call <SID>NextTexError()<CR>
 noremap <buffer> <C-Tab> :call <SID>RunLatex()<CR><Esc>
 inoremap <buffer> <C-Tab> <Esc>:call <SID>RunLatex()<CR><Esc>
 
-noremap <buffer> \lr :call <SID>CheckReferences("Reference", "ref")<CR><Space>
-noremap <buffer> \lc :call <SID>CheckReferences("Citation", "cite")<CR><Space>
+noremap <buffer> \lr :call <SID>CheckReferences('Reference', 'ref')<CR><Space>
+noremap <buffer> \lc :call <SID>CheckReferences('Citation', 'cite')<CR><Space>
 noremap <buffer> \lg :call <SID>LookAtLogFile()<CR>gg/LaTeX Warning\\|^!<CR>
 
 " Run the Latex viewer;  change these bindings if you like.
@@ -114,7 +188,7 @@ inoremap <buffer> <S-Tab> <Esc>:call <SID>NextTexError()<CR><Space>
 
 function! s:RunLatex()
     update
-    exe "silent " . b:latex_command
+    exe 'silent ' . b:latex_command
     if b:windows != 1
 	call <SID>NextTexError()
     endif
@@ -128,19 +202,36 @@ function! s:NextTexError()
     silent only
     split +1 %<.log
     if search('^l\.\d') == 0
-	bwipeout
-	call input("\nNo (More) Errors Found\n\nPress 'enter' to go on.")
+        if search('LaTeX Warning: .* multiply') == 0
+	    bwipeout
+	    call input('\nNo (More) Errors Found\n\nPress "enter" to go on.')
+	else
+	    syntax clear
+	    syntax match err /^LaTeX Warning: .*/
+	    highlight link err ToDo
+
+	    if getline('.') =~ 'multiply'
+
+		let multiply = matchstr(getline('.'), 'Label .* multiply')
+		let multiply = strpart(multiply, 7, strlen(multiply)-17)
+		let command = "normal! \<C-W>w1G/\\label{" . multiply . "}\<CR>6l\<C-W>Kzz\<C-W>wzz\<C-W>w"
+	    else
+		let command = "normal! \<C-W>Kzz\<C-W>wzz\<C-W>w"
+	    endif
+
+	    exe command
+	endif
     else
 	syntax clear
 	syntax match err /! .*/
 	syn match err /^ l\.\d.*\n.*$/
 	highlight link err ToDo
 	let linenumber = matchstr(getline('.'), '\d\+')
-	let errorposition = col("$") - strlen(linenumber) - 5
+	let errorposition = col('$') - strlen(linenumber) - 5
 	if errorposition < 1
-	    let command = "normal " . linenumber . "Gzz\<C-W>wzz\<C-W>w"
+	    let command = 'normal! ' . linenumber . "Gzz\<C-W>wzz\<C-W>w"
 	else
-	    let command = "normal " . linenumber . "G" . errorposition . "lzz\<C-W>wzz\<C-W>w"
+	    let command = 'normal! ' . linenumber . 'G' . errorposition . "lzz\<C-W>wzz\<C-W>w"
 	endif
 	    "Put a space in the .log file so that you can see where you were,
 	    "and move on to the next latex error.
@@ -154,8 +245,8 @@ endfunction
 " Run xdvi
 function! s:Xdvi()
     update
-    exe b:latex_command
-    exe b:latex_command
+    exe 'silent ' . b:latex_command
+    exe 'silent ' . b:latex_command
     exe b:dvi_viewer_command 
 endfunction
 
@@ -180,9 +271,9 @@ function! s:CheckReferences(name, ref)
 	s/^/ /
 	write
 	split #
-	exe "normal " . linenumber . "Gzz\<C-W>wzz\<C-W>w"
-	exe "normal /\\\\" . a:ref . "{" . reference . "}\<CR>"
-	exe "normal /" . reference . "\<CR>"
+	exe "normal! " . linenumber . "Gzz\<C-W>wzz\<C-W>w"
+	exe "normal! /\\\\" . a:ref . "{" . reference . "}\<CR>"
+	exe "normal! /" . reference . "\<CR>"
     endif
 endfunction
 
@@ -204,7 +295,7 @@ function! s:LookAtLogFile()
 endfunction
 
 function! s:GetLineFromLogFile()
-    let line = matchstr(getline("."), 'line \d\+')
+    let line = matchstr(getline('.'), 'line \d\+')
     wincmd t
     exe strpart(line, 5, strlen(line)-5)
 endfunction
@@ -273,9 +364,9 @@ inoremap <buffer> <F7> \noindent<CR>\textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
 inoremap <buffer> <F5> <Esc>:call <SID>DoEnvironment()<CR>
 
 " Due to Ralf Arens <ralf.arens@gmx.net>
-"inoremap <buffer> <F5> <C-O>:call <SID>PutEnvironment(input("Environment? "))<CR>
-inoremap <buffer> <C-F5> <C-O>:call <SID>ChangeEnvironment(input("Environment? "))<CR>
-noremap <buffer> <C-F5> :call <SID>ChangeEnvironment(input("Environment? "))<CR>
+"inoremap <buffer> <F5> <C-O>:call <SID>PutEnvironment(input('Environment? '))<CR>
+inoremap <buffer> <C-F5> <C-O>:call <SID>ChangeEnvironment(input('Environment? '))<CR>
+noremap <buffer> <C-F5> :call <SID>ChangeEnvironment(input('Environment? '))<CR>
 
 " }}}
 
@@ -328,21 +419,21 @@ function! s:CFTwo(var)
 	call <SID>Change('[', 0, '&\|\\lefteqn{\|\\nonumber\|\\\\', 0)
     else
 	call <SID>Change('equation*', 0, '&\|\\lefteqn{\|\\nonumber\|\\\\', 0)
-    end
+    endif
 endfunction
 function! s:CFThree(var)
     if a:var == 0
 	call <SID>Change('eqnarray', 1, '', 1)
     else
 	call <SID>Change('align', 1, '', 1)
-    end
+    endif
 endfunction
 function! s:CFFour(var)
     if a:var == 0
 	call <SID>Change('eqnarray*', 0, '\\nonumber', 0)
     else
 	call <SID>Change('align*', 0, '\\nonumber', 0)
-    end
+    endif
 endfunction
 
 function! s:Change(env, label, delete, putInNonumber)
@@ -368,14 +459,14 @@ function! s:Change(env, label, delete, putInNonumber)
 	s/\$\$\|\\end{.\{-}}/\=second/
 	let top = search('\$\$\|\\begin{','b')
 	s/\$\$\|\\begin{.\{-}}/\=first/
-    end
+    endif
     if a:delete != ''
-	exe top . "," . bottom . 's/' . a:delete . '//e'
+	exe top . ',' . bottom . 's/' . a:delete . '//e'
     endif
     if a:putInNonumber == 1
         exe top
 	call search('\\end\|\\\\')
-	if line(".") != bottom
+	if line('.') != bottom
 	    exe '.+1,' . bottom . 's/\\\\/\\nonumber\\\\/e'
 	    exe (bottom-1) . 's/\s*$/  \\nonumber/'
 	endif
@@ -384,7 +475,7 @@ function! s:Change(env, label, delete, putInNonumber)
 	exe top
 	if getline(top+1) !~ '.*label.*'
 	    put ='\label{}'
-	    normal $
+	    normal! $
 	endif
     else
 	exe top . ',' . bottom . 'g/\\label/delete'
@@ -392,12 +483,12 @@ function! s:Change(env, label, delete, putInNonumber)
 endfunction
 
 function! s:DoEnvironment()
-    let l = getline(line("."))
-    let env = strpart(l, 0, col("."))
+    let l = getline('.')
+    let env = strpart(l, 0, col('.'))
     if env =~ '^\s*$'
-	call <SID>PutEnvironment(l, input("Environment? "))
+	call <SID>PutEnvironment(l, input('Environment? '))
     else
-	normal 0D
+	normal! 0D
 	call <SID>SetEnvironment(env)
     endif
     startinsert
@@ -411,14 +502,14 @@ function! s:SetEnvironment(env)
   +put =indent . '\end{' . env . '}'
   -s/^/\=indent/
   norm $
-  if env == "array"
+  if env == 'array'
     -s/$/{}/
     " The "$hl" magic here places the cursor at the last character
     " and not after it as "$" would.
-    norm $hl
-  elseif env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\)$'
+    normal $hl
+  elseif env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\|gather\)$'
     put!=indent . '\label{}'
-    normal f}
+    normal! f}
   endif
   startinsert
 endfunction
@@ -427,17 +518,17 @@ endfunction
 function! s:PutEnvironment(indent, env)
   put! =a:indent . '\begin{' . a:env . '}'
   +put =a:indent . '\end{' . a:env . '}'
-  normal k$
-  if a:env=="array"
+  normal! k$
+  if a:env=='array'
     call <SID>ArgumentsForArray(input("{rlc}? "))
-  elseif a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\)$'
-    exe "normal O\\label\<C-V>{" . input("Label? ") . "}\<Esc>j"
+  elseif a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\|gather\)$'
+    exe "normal! O\\label\<C-V>{" . input("Label? ") . "}\<Esc>j"
   endif
 endfunction
 
 function! s:ArgumentsForArray(arg)
     put! = '{' . a:arg . '}'
-    normal kgJj
+    normal! kgJj
 endfunction
 
 function! s:ChangeEnvironment(env)
@@ -445,8 +536,8 @@ function! s:ChangeEnvironment(env)
 	call searchpair('\\\[\|\\begin{','','\\\]\|\\end{','')
     else
 	call search('\$\$\|\\end{')
-    end
-    let l = getline(line("."))
+    endif
+    let l = getline('.')
     let indent = strpart(l, 0, match(l, '\S'))
     if b:DoubleDollars == 0
 	s/\\\]\|\\end{.\{-}}/\='\\end{' . a:env . '}'/
@@ -456,17 +547,17 @@ function! s:ChangeEnvironment(env)
 	s/\$\$\|\\end{.\{-}}/\='\\end{' . a:env . '}'/
 	call search('\$\$\|\\begin{','b')
 	s/\$\$\|\\begin{.\{-}}/\='\\begin{' . a:env . '}'/
-    end
+    endif
     +
-    if a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\)$'
-	if (-1 == match(getline(line(".")),"\\label"))
-	    let label = input("Label? ")
+    if a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\|gather\)$'
+	if (-1 == match(getline('.'),"\\label"))
+	    let label = input('Label? ')
 	    if label != ''
 		put! = indent . '\label{' . label . '}'
 	    endif
 	endif
     elseif a:env[strlen(a:env)-1] == '*'
-	if (-1 != match(getline(line(".")),"\\label"))
+	if (-1 != match(getline('.'),"\\label"))
 	    delete
 	endif
     endif
@@ -475,9 +566,9 @@ endfunction
 
 function! s:PutInNonumber()
    call search('\\end\|\\\\')
-   if getline(line("."))[col(".")] != "e"
+   if getline('.')[col('.')] != 'e'
        .+1,'>s/\\\\/\\nonumber\\\\/e
-       normal `>k
+       normal! `>k
        s/\s*$/  \\nonumber/
    endif
 endfunction
@@ -591,7 +682,7 @@ inoremap <buffer> <C-P> <Up>
 inoremap <buffer> <C-Y> <C-R>"
 
 function! s:EmacsKill()
-    if col(".") == strlen(getline(line(".")))+1
+    if col('.') == strlen(getline('.'))+1
 	let @" = "\<CR>"
 	return "\<Del>"
     else
@@ -605,21 +696,22 @@ endfunction
 " Due to Ralf Aarons
 " In normal mode, gw formats the paragraph (without splitting dollar signs).
 function! s:TeX_par()
-    if (getline(".") != "")
+    if (getline('.') != '')
         let par_begin = '^$\|^\s*\\end{\|^\s*\\\]'
         let par_end = '^$\|^\s*\\begin{\|^\s*\\\['
         call search(par_begin, 'bW')
         "call searchpair(par_begin, '', par_end, 'bW')
         +
-	let l = line(".")
-        normal V
+	let l = line('.')
+        normal! V
         call search(par_end, 'W')
         "call searchpair(par_begin, '', par_end, 'W')
         -
-	if l == line(".")
-	    normal 
+	if l == line('.')
+	    normal! 
 	endif
 	normal Q
+	"normal! Q
     endif
 endfun
 map <buffer> gw :call <SID>TeX_par()<CR>
@@ -637,7 +729,7 @@ map <buffer> gw :call <SID>TeX_par()<CR>
 inoremap <buffer> <M-b> <Left>\mathbf{<Right>}<Esc>hvUla
 vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 "function! s:mathbf()
-"    echo "Mathbf: "
+"    echo 'Mathbf: '
 "    let c = nr2char(getchar())
 "    return "\\mathbf{".c."}\<Esc>hvUla"
 "endfunction
@@ -651,17 +743,17 @@ vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 " The fourth asks for a character, capitalizes it, in \mathcal{}
 " inoremap <buffer> <M-c> \mathcal{}<Left>
 " inoremap <buffer> <M-c> <Left>\mathcal{<Right>}<Esc>h~a
+vnoremap <buffer> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
 inoremap <buffer> <M-c> <C-R>=<SID>MathCal()<CR>
 function! s:MathCal()
-    if getline(line("."))[col(".")-2] =~ "[a-zA-Z0-9]"
+    if getline('.')[col('.')-2] =~ '[a-zA-Z0-9]'
 	return "\<Left>\\mathcal{\<Right>}\<Esc>hvUla"
     else
 	return "\\cite{}\<Left>"
     endif
 endfunction
-vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
 "function! s:mathcal()
-"    echo "Mathcal: "
+"    echo 'Mathcal: '
 "    let c = nr2char(getchar())
 "    return "\\mathcal{".c."}\<Esc>hvUla"
 "endfunction
@@ -670,8 +762,8 @@ vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
 "  This macro asks the user for the input to \mathbf{}
 "inoremap <buffer> <M-b> <C-R>=<SID>WithBrackets("mathbf")<CR>
 "function! s:WithBrackets(string)
-"    let user = input(a:string . ": ")
-"    return "\\" . a:string . "{" . user . "}"
+"    let user = input(a:string . ': ')
+"    return "\\" . a:string . '{' . user . '}'
 "endfunction
 
 " Alt-f This is for _{}^{}.  It moves you to the second parenthesis.
@@ -685,7 +777,7 @@ inoremap <buffer> <M-i> \item
 
 " Alt-m inserts \mbox{}
 inoremap <buffer> <M-m> \mbox{}<Left>
-vnoremap <buffer> <M-t> <C-C>`>a}<Esc>`<i\mbox{<Esc>
+vnoremap <buffer> <M-m> <C-C>`>a}<Esc>`<i\mbox{<Esc>
 
 " Alt-o inserts \overline{}
 inoremap <buffer> <M-o> \overline{}<Left>
@@ -697,7 +789,7 @@ inoremap <buffer> <M-o> \overline{}<Left>
 inoremap <buffer> <M-r> <C-R>=<SID>TexRef()<CR><Esc>F{a
 function! s:TexRef()
     let insert = '(\ref{})'
-    let lemma = strpart(getline(line(".")),col(".")-7,6)
+    let lemma = strpart(getline("."),col(".")-7,6)
     if lemma =~# 'Lemma \|emmas \|eorem \|llary '
 	let insert = '\ref{}'
     endif
@@ -732,7 +824,7 @@ inoremap <buffer> <M-Right> \lim_{}<Left>
 " Thanks to Ron Aaron <ron@mossbayeng.com>.
 function! s:TexQuotes()
     let insert = "''"
-    let left = getline(line("."))[col(".")-2]
+    let left = getline('.')[col('.')-2]
     if left =~ '^\(\|\s\)$'
 	let insert = '``'
     elseif left == '\'
@@ -747,41 +839,41 @@ inoremap <buffer> " <C-R>=<SID>TexQuotes()<CR>
 " Typing ... results in \dots   {{{
 
 "function! s:Dots()
-"    let left = strpart(getline(line(".")),col(".")-3,2)
-"    if left == ".."
-"	return "\<BS>\<BS>\\dots"
+"    let left = strpart(getline('.'),col('.')-3,2)
+"    if left == '..'
+"	return "\<BS>\<BS>\dots"
 "    else
-"       return "."
+"       return '.'
 "    endif
 "endfunction
 " Use this if you want . to result in a period followed by 1 space.
 "function! s:Dots()
-"    let column = col(".")
-"    let currentline = getline(line("."))
+"    let column = col('.')
+"    let currentline = getline('.')
 "    let previous = currentline[column-2]
-"    if strpart(currentline,column-3,2) == ". "
+"    if strpart(currentline,column-3,2) == '. '
 "	return "\<BS>"
 "    elseif previous == '.'
 "	return "\<BS>\\dots"
-"    elseif previous =~ '[\$A-Za-z]' && currentline !~ "@"
-"	return ". "
+"    elseif previous =~ '[\$A-Za-z]' && currentline !~ '@'
+"	return '. '
 "    else
-"	return "."
+"	return '.'
 "    endif
 "endfunction
 " Use this if you want . to result in a period followed by 2 spaces.
 function! s:Dots()
-    let column = col(".")
-    let currentline = getline(line("."))
+    let column = col('.')
+    let currentline = getline('.')
     let previous = currentline[column-2]
-    if strpart(currentline,column-4,3) == ".  "
+    if strpart(currentline,column-4,3) == '.  '
 	return "\<BS>\<BS>"
     elseif previous == '.'
 	return "\<BS>\\dots"
-    elseif previous =~ '[\$A-Za-z]' && currentline !~ "@"
-	return ".  "
+    elseif previous =~ '[\$A-Za-z]' && currentline !~ '@'
+	return '.  '
     else
-	return "."
+	return '.'
     endif
 endfunction
 inoremap <buffer> . <C-R>=<SID>Dots()<CR>
@@ -793,8 +885,8 @@ inoremap <buffer> <M-.> .
 
 " Typing __ results in _{}
 function! s:SubBracket()
-    let insert = "_"
-    let left = getline(line("."))[col(".")-2]
+    let insert = '_'
+    let left = getline('.')[col('.')-2]
     if left == '_'
 	let insert = "{}\<Left>"
     endif
@@ -804,8 +896,8 @@ inoremap <buffer> _ <C-R>=<SID>SubBracket()<CR>
 
 " Typing ^^ results in ^{}
 function! s:SuperBracket()
-    let insert = "^"
-    let left = getline(line("."))[col(".")-2]
+    let insert = '^'
+    let left = getline('.')[col('.')-2]
     if left == '^'
 	let insert = "{}\<Left>"
     endif
@@ -830,58 +922,58 @@ inoremap <buffer> ^ <C-R>=<SID>SuperBracket()<CR>
 "inoremap <buffer> <M-l>< \langle\rangle<Left><Left><Left><Left><Left><Left><Left>
 "inoremap <buffer> <M-l>q \lefteqn{
 function! s:LeftRight()
-    let line = getline(line("."))
-    let char = line[col(".")-1]
-    let previous = line[col(".")-2]
+    let line = getline('.')
+    let char = line[col('.')-1]
+    let previous = line[col('.')-2]
     if char =~ '(\|\['
-        exe "normal i\\left\<Esc>la\\right\<Esc>6h"
+        exe "normal! i\\left\<Esc>la\\right\<Esc>6h"
     elseif char == '|'
 	if previous == '\'
-	    exe "normal ileft\\\<Esc>"
+	    exe "normal! ileft\\\<Esc>"
 	else
-	    exe "normal i\\left\<Esc>"
+	    exe "normal! i\\left\<Esc>"
 	endif
-	exe "normal la\\right\<Esc>6h"
+	exe "normal! la\\right\<Esc>6h"
     elseif char == '{'
 	if previous == '\'
-	    exe "normal ileft\\\<Esc>la\\right\<Esc>6h"
+	    exe "normal! ileft\\\<Esc>la\\right\<Esc>6h"
 	else
-	    exe "normal i\\left\\\<Esc>la\\right\\\<Esc>7h"
+	    exe "normal! i\\left\\\<Esc>la\\right\\\<Esc>7h"
 	endif
     elseif char == '<'
-	exe "normal s\\langle\\rangle\<Esc>7h"
+	exe "normal! s\\langle\\rangle\<Esc>7h"
     elseif char == 'q'
-	exe "normal s\\lefteqn\<C-V>{\<Esc>"
+	exe "normal! s\\lefteqn\<C-V>{\<Esc>"
     else
-	exe "normal a\\label\<C-V>{}\<Esc>h"
+	exe "normal! a\\label\<C-V>{}\<Esc>h"
     endif
 endfunction
 inoremap <buffer> <M-l> <Esc>:call <SID>LeftRight()<CR>a
 noremap <buffer> <M-l> :call <SID>PutLeftRight()<CR>
 vnoremap <buffer> <M-l> <C-C>`>a\right<Esc>`<i\left<Esc>
 "function! s:LeftRight()
-"let char = getline(line("."))[col(".")-1]
-"let previous = getline(line("."))[col(".")-2]
+"let char = getline('.')[col('.')-1]
+"let previous = getline('.')[col('.')-2]
 "if char == '('
-"	exe "normal i\\left\<Esc>la\\right)\<Esc>7h"
+"	exe "normal! i\\left\<Esc>la\\right)\<Esc>7h"
 "elseif char == '['
-"	exe "normal i\\left\<Esc>la\\right]\<Esc>7h"
+"	exe "normal! i\\left\<Esc>la\\right]\<Esc>7h"
 "elseif char == '|'
 "	if previous == '\'
-"		exe "normal ileft\\\<Esc>la\\right\\\|\<Esc>8h"
+"		exe "normal! ileft\\\<Esc>la\\right\\\|\<Esc>8h"
 "	else
-"		exe "normal i\\left\<Esc>la\\right\|\<Esc>7h"
+"		exe "normal! i\\left\<Esc>la\\right\|\<Esc>7h"
 "	endif
 "elseif char == '{'
 "	if previous == '\'
-"		exe "normal ileft\\\<Esc>la\\right\\}\<Esc>8h"
+"		exe "normal! ileft\\\<Esc>la\\right\\}\<Esc>8h"
 "	else
-"		exe "normal i\\left\\\<Esc>la\\right\\}\<Esc>8h"
+"		exe "normal! i\\left\\\<Esc>la\\right\\}\<Esc>8h"
 "	endif
 "elseif char == '<'
-"	exe "normal s\\langle\\rangle\<Esc>7h"
+"	exe "normal! s\\langle\\rangle\<Esc>7h"
 "elseif char == 'q'
-"	exe "normal s\\lefteqn{\<Esc>lx"
+"	exe "normal! s\\lefteqn{\<Esc>lx"
 "endif
 "endfunction
 
@@ -893,12 +985,12 @@ vnoremap <buffer> <M-l> <C-C>`>a\right<Esc>`<i\left<Esc>
 
 " Typing the symbol a second time (for example, $$) will result in one
 " of the symbole (for instance, $).  With {, typing \{ will result in \{\}.
-inoremap <buffer> ( <C-R>=<SID>Double("(",")")<CR>
-"inoremap <buffer> [ <C-R>=<SID>Double("[","]")<CR>
-inoremap <buffer> [ <C-R>=<SID>CompleteSlash("[","]")<CR>
-inoremap <buffer> $ <C-R>=<SID>Double("$","$")<CR>
+inoremap <buffer> ( <C-R>=<SID>Double('(',')')<CR>
+"inoremap <buffer> [ <C-R>=<SID>Double('[',']')<CR>
+inoremap <buffer> [ <C-R>=<SID>CompleteSlash('[',']')<CR>
+inoremap <buffer> $ <C-R>=<SID>Double('$','$')<CR>
 inoremap <buffer> & <C-R>=<SID>DoubleAmpersands()<CR>
-inoremap <buffer> { <C-R>=<SID>CompleteSlash("{","}")<CR>
+inoremap <buffer> { <C-R>=<SID>CompleteSlash('{','}')<CR>
 inoremap <buffer> \| <C-R>=<SID>CompleteSlash("\|","\|")<CR>
 
 " If you would rather insert $$ individually, the following macro by 
@@ -912,7 +1004,7 @@ inoremap <buffer> \| <C-R>=<SID>CompleteSlash("\|","\|")<CR>
 
 " For () and $$
 function! s:Double(left,right)
-    if strpart(getline(line(".")),col(".")-2,2) == a:left . a:right
+    if strpart(getline('.'),col('.')-2,2) == a:left . a:right
 	return "\<Del>"
     else
 	return a:left . a:right . "\<Left>"
@@ -921,18 +1013,18 @@ endfunction
 
 " Complete [, \[, {, \{, |, \|
 function! s:CompleteSlash(left,right)
-    let column = col(".")
-    let first = getline(line("."))[column-2]
-    let second = getline(line("."))[column-1]
+    let column = col('.')
+    let first = getline('.')[column-2]
+    let second = getline('.')[column-1]
     if first == "\\"
-	if a:left == "["
+	if a:left == '['
 	    return "\[\<CR>\<CR>\\]\<Up>"
 	else
 	    return a:left . "\\" . a:right . "\<Left>\<Left>"
 	endif
     else
 	if a:left =~ '\[\|{'
-	\ && strpart(getline(line(".")),col(".")-2,2) == a:left . a:right
+	\ && strpart(getline('.'),col('.')-2,2) == a:left . a:right
 	    return "\<Del>"
         else
             return a:left . a:right . "\<Left>"
@@ -943,7 +1035,7 @@ endfunction
 " Double ampersands, if you are in an eqnarray or eqnarray* environment.
 function! s:DoubleAmpersands()
     let stop = 0
-    let currentline = line(".")
+    let currentline = line('.')
     while stop == 0
 	let currentline = currentline - 1
 	let thisline = getline(currentline)
@@ -953,10 +1045,10 @@ function! s:DoubleAmpersands()
     endwhile
     if thisline =~ '\\begin{eqnarray\**}'
 	return "&&\<Left>"
-    elseif strpart(getline(line(".")),col(".")-2,2) == "&&"
+    elseif strpart(getline('.'),col('.')-2,2) == '&&'
 	return "\<Del>"
     else
-	return "&"
+	return '&'
     endif
 endfunction
 
@@ -966,11 +1058,6 @@ endfunction
 " "========================================================================="
 " Embrace the visual region with the symbol.   {{{
 
-" This assumes that you are using
-" set selection=exclusive
-" If you are not, replace these macros with ones like this.
-"vnoremap <buffer> ( <C-C>`>a)<C-C>`<i(<Esc>
-vnoremap <buffer> <M-l> <C-C>`>a\right<Esc>`<i\left<Esc>
 vnoremap <buffer> <Leader>( <C-C>`>a)<Esc>`<i(<Esc>
 vnoremap <buffer> <Leader>[ <C-C>`>a]<Esc>`<i[<Esc>
 vnoremap <buffer> <Leader>{ <C-C>`>a}<Esc>`<i{<Esc>
@@ -980,16 +1067,16 @@ vnoremap <buffer> <M-4> <C-C>`>a$<Esc>`<i$<Esc>
 
 " }}}
 " "========================================================================="
-" Auto-split of long lines.   {{{
+" Auto-split long lines.   {{{
 
 " Key Bindings                {{{
 
-noremap <buffer> gq :call <SID>TexFormatLine(b:tw)<CR>
-noremap <buffer> Q :call <SID>TexFormatLine(b:tw)<CR>
-vnoremap <buffer> Q J:call <SID>TexFormatLine(b:tw)<CR>
-noremap <buffer> <C-CR> :call <SID>TexFormatLine(b:tw)<CR>
-inoremap <buffer> <C-CR> <Esc>:call <SID>TexFormatLine(b:tw)<CR>
-vnoremap <buffer> <C-CR> J:call <SID>TexFormatLine(b:tw)<CR>
+noremap <buffer> gq :call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
+noremap <buffer> Q :call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
+vnoremap <buffer> Q J:call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
+noremap <buffer> <C-CR> :call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
+inoremap <buffer> <C-CR> <Esc>:call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
+vnoremap <buffer> <C-CR> J:call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<C>
 "  With this map, <Space> will split up a long line, keeping the dollar
 "  signs together (see the next function, TexFormatLine).
 inoremap <buffer> <Space> <Space><Esc>:call <SID>TexFill(b:tw)<CR>a
@@ -999,52 +1086,69 @@ inoremap <buffer> <Space> <Space><Esc>:call <SID>TexFill(b:tw)<CR>a
 " Functions       {{{
 
 function! s:TexFill(width)
-    if col(".") > a:width
-	exe "normal a##\<Esc>"
-	call <SID>TexFormatLine(a:width)
-	exe "normal ?##\<CR>2s\<Esc>"
+    if col('.') > a:width
+	" For future use, record the current line and 
+	" the number of the current column.
+	let current_line = getline('.')
+	let current_column = col('.')
+	exe "normal! a##\<Esc>"
+	call <SID>TexFormatLine(a:width,current_line,current_column)
+        exe "normal! ?##\<CR>2s\<Esc>"
+        " Remove ## from the search history.
+	call histdel("/", -1)|let @/=histget("/", -1)
     endif
 endfunction
 
-function! s:TexFormatLine(width)
-    let first = strpart(getline(line(".")),0,1)
-    normal $
-    let length = col(".")
+function! s:TexFormatLine(width,current_line,current_column)
+    " Find the first nonwhitespace character.
+    let first = matchstr(a:current_line, '\S')
+    normal! $
+    let length = col('.')
     let go = 1
     while length > a:width+2 && go
 	let between = 0
-	let string = strpart(getline(line(".")),0,a:width)
+	let string = strpart(getline('.'),0,a:width)
 	" Count the dollar signs
         let number_of_dollars = 0
 	let evendollars = 1
 	let counter = 0
 	while counter <= a:width-1
-	    if string[counter] == '$' && string[counter-1] != '\'  " Skip \$.
+	    " Pay attention to '$$'.
+	    if string[counter] == '$' && string[counter-1] != '$'
 	       let evendollars = 1 - evendollars
 	       let number_of_dollars = number_of_dollars + 1
 	    endif
 	    let counter = counter + 1
 	endwhile
 	" Get ready to split the line.
-	exe "normal " . (a:width + 1) . "|"
+	exe 'normal! ' . (a:width + 1) . '|'
 	if evendollars
 	" Then you are not between dollars.
-	   exe "normal ?\\$\\| \<CR>W"
+	   exe "normal! ?\\$\\+\\| \<CR>W"
 	else
 	" Then you are between dollars.
-	    normal F$
-	    if col(".") == 1 || strpart(getline(line(".")),col(".")-1,1) != "$"
+	    normal! F$
+	    " Move backward once more if you are at "$$".
+	    if getline('.')[col('.')-2] == '$'
+		normal h
+	    endif
+	    if col('.') == 1 || strpart(getline('.'),col('.')-1,1) != '$'
 	       let go = 0
 	    endif
 	endif
 	if first == '$' && number_of_dollars == 1
 	    let go = 0
 	else
-	    exe "normal i\<CR>\<Esc>$"
-	    let first = strpart(getline(line(".")),0,1)
+	    exe "normal! i\<CR>\<Esc>$"
+	    " Find the first nonwhitespace character.
+	    let first = matchstr(getline('.'), '\S')
 	endif
-	let length = col(".")
+	let length = col('.')
     endwhile
+    if go == 0 && strpart(a:current_line,0,a:current_column) =~ '.*\$.\+\$.*'
+	exe "normal! ^f$a\<CR>\<Esc>"
+	call <SID>TexFormatLine(a:width,a:current_line,a:current_column)
+    endif
 endfunction
 
 " }}}
@@ -1074,32 +1178,32 @@ inoremap <buffer> <C-BS> <Left><C-O>:call <SID>DeleteBrackets()<CR>
 
 " Delete matching brackets.
 function! s:DeleteBrackets()
-    let b = getline(line("."))[col(".") - 2]
-    let c = getline(line("."))[col(".") - 1]
+    let b = getline('.')[col('.') - 2]
+    let c = getline('.')[col('.') - 1]
     if b == '\' && c =~ '{\|}'
-	normal X%X%
+	normal! X%X%
     endif
     if c =~ '{\|\[\|('
-	normal %x``x
+	normal! %x``x
     elseif c =~ '}\|\]\|)'
-	normal %%x``x``
+	normal! %%x``x``
     endif
 endfunction
 
 " Put \left...\right in front of the matched brackets.
 function! s:PutLeftRight()
-    let previous = getline(line("."))[col(".") - 2]
-    let char = getline(line("."))[col(".") - 1]
+    let previous = getline('.')[col('.') - 2]
+    let char = getline('.')[col('.') - 1]
     if previous == '\'
     if char == '{'
-	exe "normal ileft\\\<Esc>l%iright\\\<Esc>l%"
+	exe "normal! ileft\\\<Esc>l%iright\\\<Esc>l%"
     elseif char == '}'
-	exe "normal iright\\\<Esc>l%ileft\\\<Esc>l%"
+	exe "normal! iright\\\<Esc>l%ileft\\\<Esc>l%"
     endif
     elseif char =~ '\[\|('
-	exe "normal i\\left\<Esc>l%i\\right\<Esc>l%"
+	exe "normal! i\\left\<Esc>l%i\\right\<Esc>l%"
     elseif char =~ '\]\|)'
-	exe "normal i\\right\<Esc>l%i\\left\<Esc>l%"
+	exe "normal! i\\right\<Esc>l%i\\left\<Esc>l%"
     endif
 endfunction
 
@@ -1119,71 +1223,71 @@ endfunction
 function! s:PutBigg()
     let in = input("\\Big, \\bigg, or what? (default: bigg):  ")
     let in = <SID>StripSlash(in,"\\bigg")
-    let b = getline(line("."))[col(".") - 2]
-    let c = getline(line("."))[col(".") - 1]
+    let b = getline('.')[col('.') - 2]
+    let c = getline('.')[col('.') - 1]
     if b == '\'
-	exe "normal hi" . in . "\<Esc>l%hi" . in . "\<Esc>l%"
+	exe "normal! hi" . in . "\<Esc>l%hi" . in . "\<Esc>l%"
     elseif c =~ '{\|\[\|(\|}\|\]\|)'
-	exe "normal i" . in . "\<Esc>l%i" . in . "\<Esc>l%"
+	exe "normal! i" . in . "\<Esc>l%i" . in . "\<Esc>l%"
     endif
 endfunction
 
 " Change \left..\right to \bigg, or whatever the user chooses.
 function! s:ChangeLeftRightBigg()
     let in = input("\\Big, \\bigg, or what? (default: nothing):  ")
-    let in = <SID>StripSlash(in,"")
-    let b = getline(line("."))[col(".") - 2]
-    let c = getline(line("."))[col(".") - 1]
+    let in = <SID>StripSlash(in,'')
+    let b = getline('.')[col('.') - 2]
+    let c = getline('.')[col('.') - 1]
     if b == '\'
       if c =~ '{\|}'
-	exe "normal 2F\\xcw" . in . "\<Esc>2l%2F\\xcw" . in . "\<Esc>2l%"
+	exe "normal! 2F\\xcw" . in . "\<Esc>2l%2F\\xcw" . in . "\<Esc>2l%"
       endif
     elseif c =~ '\[\|(\|\]\|)'
-      exe "normal F\\xcw" . in . "\<Esc>l%F\\xcw" . in . "\<Esc>l%"
+      exe "normal! F\\xcw" . in . "\<Esc>l%F\\xcw" . in . "\<Esc>l%"
     endif
 endfunction
 
 " Change the brackets to curly brackets.
 function! s:ChangeCurly()
-    let c = getline(line("."))[col(".") - 1]
+    let c = getline('.')[col('.') - 1]
     if c =~ '\[\|('
-	exe "normal i\\\<Esc>l%i\\\<Esc>lr}``r{"
+	exe "normal! i\\\<Esc>l%i\\\<Esc>lr}``r{"
     elseif c =~ '\]\|)'
-	exe "normal %i\\\<Esc>l%i\\\<Esc>lr}``r{%"
+	exe "normal! %i\\\<Esc>l%i\\\<Esc>lr}``r{%"
     endif
 endfunction
 
 " Change the brackets to round brackets.
 function! s:ChangeRound()
-    let b = getline(line("."))[col(".") - 2]
-    let c = getline(line("."))[col(".") - 1]
+    let b = getline('.')[col('.') - 2]
+    let c = getline('.')[col('.') - 1]
     if b == '\'
     if c == '{'
-	normal X%Xr)``r(
+	normal! X%Xr)``r(
     elseif c == '}'
-	normal %X%Xr)``r(%
+	normal! %X%Xr)``r(%
     endif
     elseif c == '['
-	normal %r)``r(
+	normal! %r)``r(
     elseif c == ']'
-	normal %%r)``r(%
+	normal! %%r)``r(%
     endif
 endfunction
 
 " Change the brackets to square brackets.
 function! s:ChangeSquare()
-    let b = getline(line("."))[col(".") - 2]
-    let c = getline(line("."))[col(".") - 1]
+    let b = getline('.')[col('.') - 2]
+    let c = getline('.')[col('.') - 1]
     if b == '\'
 	if c == '{'
-	    normal X%Xr]``r[
+	    normal! X%Xr]``r[
 	elseif c == '}'
-	    normal %X%Xr]``r[%
+	    normal! %X%Xr]``r[%
 	endif
     elseif c == '('
-	normal %r]``r[
+	normal! %r]``r[
     elseif c == ')'
-	normal %%r]``r[%
+	normal! %%r]``r[%
     endif
 endfunction
 
@@ -1214,10 +1318,10 @@ nnoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab :w<CR>:silent ! xterm -bg i
 inoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab <Esc>:w<CR>:silent ! xterm -bg ivory -fn 7x14 -e latex % &<CR>
 nnoremenu 50.402 Latex.next\ math\ error\ \ \ Shift-Tab :call <SID>NextTexError()<CR><Space>
 inoremenu 50.402 Latex.next\ math\ error\ \ \ Shift-Tab <Esc>:call <SID>NextTexError()<CR><Space>
-nnoremenu 50.403 Latex.next\ ref\ error :call <SID>CheckReferences("Reference", "ref")<CR><Space>
-inoremenu 50.403 Latex.next\ ref\ error <Esc>:call <SID>CheckReferences("Reference", "ref")<CR><Space>
-nnoremenu 50.404 Latex.next\ cite\ error :call <SID>CheckReferences("Citation", "cite")<CR><Space>
-inoremenu 50.404 Latex.next\ cite\ error <Esc>:call <SID>CheckReferences("Citation", "cite")<CR><Space>
+nnoremenu 50.403 Latex.next\ ref\ error :call <SID>CheckReferences('Reference', 'ref')<CR><Space>
+inoremenu 50.403 Latex.next\ ref\ error <Esc>:call <SID>CheckReferences('Reference', 'ref')<CR><Space>
+nnoremenu 50.404 Latex.next\ cite\ error :call <SID>CheckReferences('Citation', 'cite')<CR><Space>
+inoremenu 50.404 Latex.next\ cite\ error <Esc>:call <SID>CheckReferences('Citation', 'cite')<CR><Space>
 nnoremenu 50.405 Latex.view\ log\ file :call <SID>LookAtLogFile()<CR>
 inoremenu 50.405 Latex.view\ log\ file <Esc>:call <SID>LookAtLogFile()<CR>
 nnoremenu 50.406 Latex.view\ dvi\ \ \ \ \ Alt-Tab :call <SID>Xdvi()<CR><Space>
@@ -1245,17 +1349,10 @@ iab <buffer> \v \vfill
 " "========================================================================="
 " Personal or Temporary bindings.   {{{
 
-"inoremap <buffer> ;; ;
+"inoremap <buffer> ;; ;<Space><Space>
+"inoremap <buffer> ;p p_0
 "inoremap <buffer> ;<CR> <CR>\bigskip<CR>\noindent<CR>\textbf{}<Left>
 "inoremap <buffer> ;e E\left[\right]<Esc>F\i
-"inoremap <buffer> ;i \int_{\mathbf{R}^d}
-"inoremap <buffer> ;I \int_{0}^{\infty}
-"inoremap <buffer> ;p P\left(\right)<Esc>F\i
-"inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
-"inoremap <buffer> ;2 <CR>\newline<CR>\noindent<CR>p, $\ell$)  <Esc>0a
-"inoremap <buffer> ;s S_t^{\alpha}
-"inoremap <buffer> ;^ ^{(n)}
-"inoremap <buffer> ;d \diamond
 
 " }}}
 " "========================================================================="
