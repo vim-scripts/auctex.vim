@@ -1,13 +1,17 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	December 9, 2001
-" Version:  1.01
+" Last Change:	June 22, 2002
+" Version:  1.5
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 " Auctex-style macros for Latex typing.
 " You will have to customize the functions RunLatex(), Xdvi(), 
-" and the maps for inserting template files, on lines 87 - 94.
+" and the maps for inserting template files, on lines 102 - 105.
+
+" Switch to the directory of the tex file.  Thanks to Fritz Mehner.
+" This is useful for starting xdvi, or going to the next tex error.
+" autocmd BufEnter *.tex :cd %:p:h
 
 " Run Latex
 noremap <buffer> K :call <SID>RunLatex()<CR><Esc>
@@ -104,10 +108,10 @@ map <buffer> <F4> :if strpart(getline(1),0,9) != "\\document"<CR>!cp ~/Storage/L
 " Boldface:  (2 alternative macros)
 " In the first, \mathbf{} appears.
 " In the second, you type the letter, and it capitalizes the letter
-" and surrounds it with \mathbf
+" and surrounds it with \mathbf{}
 " inoremap <buffer> <M-b> \mathbf{}<Left>
-"inoremap <buffer> <M-b> <Left>\mathbf{<Right>}<Esc>h~a
 inoremap <buffer> <M-b> <Left>\mathbf{<Right>}<Esc>hvUla
+vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 
 " Cal:  (3 alternative macros:  see Boldface)
 " The third one also inserts \cite{}, if the previous character is a blank
@@ -122,6 +126,7 @@ function! s:MathCal()
 	return "\\cite{}\<Left>"
     endif
 endfunction
+vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
 
 "inoremap <buffer> <M-b> <C-R>=<SID>WithBrackets("mathbf")<CR>
 "function! s:WithBrackets(string)
@@ -140,6 +145,7 @@ inoremap <buffer> <M-i> \item
 
 " Alt-m inserts \mbox{}
 inoremap <buffer> <M-m> \mbox{}<Left>
+vnoremap <buffer> <M-t> <C-C>`>a}<Esc>`<i\mbox{<Esc>
 
 " Alt-o inserts \overline{}
 inoremap <buffer> <M-o> \overline{}<Left>
@@ -247,19 +253,32 @@ inoremap <buffer> <M-'> "
 " Ctrl-F1 through Ctrl-F5 replaces the current environment
 "     with \begin-\end{equation} through \begin-\end{}.
 inoremap <buffer> <F1> \begin{equation}<CR>\label{}<CR><CR>\end{equation}<Esc>2k$i
+inoremap <buffer> <F3> \begin{eqnarray}<CR>\label{}<CR><CR>\end{eqnarray}<Esc>2k$i
+inoremap <buffer> <F4> \begin{eqnarray*}<CR><CR>\end{eqnarray*}<Up>
+inoremap <buffer> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
+inoremap <buffer> <F7> \noindent<CR>\textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
+
+" The following are for $$..$$
+"noremap <buffer> <C-F1> /\\end\\|\$\$<CR>S\end{equation}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{equation}<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>`<:call <SID>PutInLabel()<CR>a
+"inoremap <buffer> <C-F1> <Esc>/\\end\\|\$\$<CR>S\end{equation}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{equation}<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>`<:call <SID>PutInLabel()<CR>a
+"inoremap <buffer> <F2> $$<CR><CR>$$<Up>
+"noremap <buffer> <C-F2> /\\end<CR>S$$<Esc>v?\\begin<CR><Esc>S$$<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>:'<+1g/\\label/delete<CR>
+"inoremap <buffer> <C-F2> <Esc>/\\end<CR>S$$<Esc>v?\\begin<CR><Esc>S$$<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>:'<+1g/\\label/delete<CR>
+"noremap <buffer> <C-F3> /\\end\\|\$\$<CR>S\end{eqnarray}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray}<Esc>:call <SID>PutInNonumber ()<CR>`<:call <SID>PutInLabel ()<CR>a
+"inoremap <buffer> <C-F3> <Esc>/\\end\\|\$\$<CR>S\end{eqnarray}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray}<Esc>:call <SID>PutInNonumber ()<CR>`<:call <SID>PutInLabel ()<CR>a
+"noremap <buffer> <C-F4> /\\end\\|\$\$<CR>S\end{eqnarray*}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray*}<Esc>:'<,'>s/\\nonumber//e<CR>:'<+1g/\\label/delete<CR>
+"inoremap <buffer> <C-F4> <Esc>/\\end\\|\$\$<CR>S\end{eqnarray*}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray*}<Esc>:'<,'>s/\\nonumber//e<CR>:'<+1g/\\label/delete<CR>
+
+" The following are for \[..\]
 noremap <buffer> <C-F1> /\\end\\|\\]<CR>S\end{equation}<Esc>v?\\begin\\|\\[<CR><Esc>S\begin{equation}<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>`<:call <SID>PutInLabel()<CR>a
 inoremap <buffer> <C-F1> <Esc>/\\end\\|\\]<CR>S\end{equation}<Esc>v?\\begin\\|\\[<CR><Esc>S\begin{equation}<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>`<:call <SID>PutInLabel()<CR>a
 inoremap <buffer> <F2> \[<CR><CR>\]<Up>
 noremap <buffer> <C-F2> /\\end<CR>S\]<Esc>v?\\begin<CR><Esc>S\[<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>:'<+1g/\\label/delete<CR>
 inoremap <buffer> <C-F2> <Esc>/\\end<CR>S\]<Esc>v?\\begin<CR><Esc>S\[<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>:'<+1g/\\label/delete<CR>
-inoremap <buffer> <F3> \begin{eqnarray}<CR>\label{}<CR><CR>\end{eqnarray}<Esc>2k$i
 noremap <buffer> <C-F3> /\\end\\|\\]<CR>S\end{eqnarray}<Esc>v?\\begin\\|\\[<CR><Esc>S\begin{eqnarray}<Esc>:call <SID>PutInNonumber ()<CR>`<:call <SID>PutInLabel ()<CR>a
 inoremap <buffer> <C-F3> <Esc>/\\end\\|\\]<CR>S\end{eqnarray}<Esc>v?\\begin\\|\\[<CR><Esc>S\begin{eqnarray}<Esc>:call <SID>PutInNonumber ()<CR>`<:call <SID>PutInLabel ()<CR>a
-inoremap <buffer> <F4> \begin{eqnarray*}<CR><CR>\end{eqnarray*}<Up>
 noremap <buffer> <C-F4> /\\end\\|\\]<CR>S\end{eqnarray*}<Esc>v?\\begin\\|\\[<CR><Esc>S\begin{eqnarray*}<Esc>:'<,'>s/\\nonumber//e<CR>:'<+1g/\\label/delete<CR>
 inoremap <buffer> <C-F4> <Esc>/\\end\\|\\]<CR>S\end{eqnarray*}<Esc>v?\\begin\\|\\[<CR><Esc>S\begin{eqnarray*}<Esc>:'<,'>s/\\nonumber//e<CR>:'<+1g/\\label/delete<CR>
-inoremap <buffer> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
-inoremap <buffer> <F7> \noindent<CR>\textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
 
 " The next idea came from a contributed NEdit macro.
 " typing the name of the environment followed by <F5> results in 
@@ -283,33 +302,39 @@ function! s:DoEnvironment(env)
     startinsert
 endfunction
 
+" The following function was improved by Peppe Guldberg and Torsten Wolf.
 function! s:SetEnvironment(env)
-    put! ='\begin{' . a:env . '}'
-    normal j
-    put ='\end{' . a:env . '}'
-    normal k
-    if a:env == "array"
-	normal k
-	exe "normal A\<C-V>{}\<Esc>"
-    endif
-    if a:env == "theorem" || a:env == "lemma" || a:env == "equation" || a:env == "eqnarray" || a:env == "align" || a:env == "multline"
-	put! ='\label{}'
-	normal f}
-    endif
-    startinsert
+  let indent = strpart(a:env, 0, match(a:env, '\S'))
+  let env = strpart(a:env, strlen(indent))
+  put! =indent . '\begin{' . env . '}'
+  +put =indent . '\end{' . env . '}'
+  -s/^/\=indent/
+  norm $
+  if env == "array"
+    -s/$/{}/
+    " The "$hl" magic here places the cursor at the last character
+    " and not after it as "$" would.
+    norm $hl
+  elseif env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\)$'
+    put!=indent . '\label{}'
+    normal f}
+  endif
+  startinsert
 endfunction
 
+" The following function was improved by Peppe Guldberg and Torsten Wolf.
 function! s:PutEnvironment(env)
-    put! ='\begin{' . a:env . '}'
-    normal j
-    put ='\end{' . a:env . '}'
-    normal k
-    if a:env == "array"
-	call <SID>ArgumentsForArray(input("{rlc}? "))
-    endif
-    if a:env == "theorem" || a:env == "lemma" || a:env == "equation" || a:env == "eqnarray" || a:env == "align" || a:env == "multline"
-	call <SID>AskLabel(input("Label? "))
-    endif
+  let indent = strpart(a:env, 0, match(a:env, '\S'))
+  let env = strpart(a:env, strlen(indent))
+  put! =indent . '\begin{' . env . '}'
+  +put =indent . '\end{' . env . '}'
+  -s/^/\=indent/
+  norm $
+  if env=="array"
+    call <SID>ArgumentsForArray(input("{rlc}? "))
+  elseif env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\)$'
+    call <SID>AskLabel(input("Label? "))
+  endif
 endfunction
 
 function! s:ArgumentsForArray(arg)
@@ -317,10 +342,13 @@ function! s:ArgumentsForArray(arg)
     normal kgJj
 endfunction
 
+" Quote or unquote lines, depending on whether you use $$..$$ or \[..\]
 function! s:ChangeEnvironment(env)
     exe "normal /\\\\end\\|\\\\]\<CR>dd"
+    "exe "normal /\\\\end\\|\\$\\$\<CR>dd"
     put! = '\end{' . a:env . '}'
     exe "normal ?\\\\begin\\|\\\\[\<CR>dd"
+    "exe "normal ?\\\\begin\\|\\$\\$\<CR>dd"
     put! = '\begin{' . a:env . '}'
     normal j
     if a:env == "theorem" || a:env == "lemma" || a:env == "equation" || a:env == "eqnarray" || a:env == "align" || a:env == "multline"
@@ -580,7 +608,7 @@ inoremap <buffer> `<Right> \lim_{}<Left>
 inoremap <buffer> `<C-S> \sin
 inoremap <buffer> `<C-T> \tan
 inoremap <buffer> `<M-l> \ell
-inoremap <buffer> `<CR> \nonumber\\<CR>
+inoremap <buffer> `<CR> \nonumber\\<CR><HOME>&&<Left>
 
 "  With this map, <Space> will split up a long line, keeping the dollar
 "  signs together (see the next function, TexFormatLine).
@@ -679,29 +707,45 @@ function! s:PutLeftRight()
     endif
 endfunction
 
+function! s:StripSlash(string)
+    let s:default = "bigg"
+    let s:len = strlen(a:string)
+    if a:string[0] == "\\"
+	return strpart(a:string, 1, s:len-1)
+    elseif s:len == 0
+	return s:default
+    else
+	return a:string
+    endif
+endfunction
+
 function! s:PutBigg()
+    let s:in = input("\\Big, \\bigg, or what? ")
+    let s:in = <SID>StripSlash(s:in)
     let s:b = getline(line("."))[col(".") - 2]
     let s:c = getline(line("."))[col(".") - 1]
     if s:b == '\'
-	exe "normal ibigg\\\<Esc>l%ibigg\\\<Esc>l%"
+	exe "normal i" . s:in . "\\\<Esc>l%i" . s:in . "\\\<Esc>l%"
     elseif s:c == '{' || s:c == '[' || s:c == '(' || s:c == '}' || s:c == ']' || s:c == ')'
-	exe "normal i\\bigg\<Esc>l%i\\bigg\<Esc>l%"
+	exe "normal i\\" . s:in . "\<Esc>l%i\\" . s:in . "\<Esc>l%"
     endif
 endfunction
 
 function! s:ChangeLeftRightBigg()
+    let s:in = input("\\Big, \\bigg, or what? ")
+    let s:in = <SID>StripSlash(s:in)
     let s:b = getline(line("."))[col(".") - 2]
     let s:c = getline(line("."))[col(".") - 1]
     if s:b == '\'
-    if s:c == '{'
-	exe "normal 5hcwbigg\<Esc>2l%6hcwbigg\<Esc>2l%"
-    elseif s:c == '}'
-	exe "normal 6hcwbigg\<Esc>2l%5hcwbigg\<Esc>2l%"
-    endif
+	if s:c == '{'
+	    exe "normal 2F\\lcw" . s:in . "\<Esc>2l%2F\\lcw" . s:in . "\<Esc>2l%"
+	elseif s:c == '}'
+	    exe "normal 2F\\lcw" . s:in . "\<Esc>2l%2F\\lcw" . s:in . "\<Esc>2l%"
+	endif
     elseif s:c == '{' || s:c == '[' || s:c == '('
-	exe "normal 4hcwbigg\<Esc>l%5hcwbigg\<Esc>l%"
+	exe "normal F\\lcw" . s:in . "\<Esc>l%F\\lcw" . s:in . "\<Esc>l%"
     elseif s:c == '}' || s:c == ']' || s:c == ')'
-	exe "normal 5hcwbigg\<Esc>l%4hcwbigg\<Esc>l%"
+	exe "normal F\\lcw" . s:in . "\<Esc>l%F\\lcw" . s:in . "\<Esc>l%"
     endif
 endfunction
 
@@ -757,10 +801,10 @@ nnoremenu 40.407 Brackets.change\ to\ \\{\\} :call <SID>ChangeCurly()<CR>
 inoremenu 40.408 Brackets.change\ to\ \\{\\} <Esc>:call <SID>ChangeCurly()<CR>a
 nnoremenu 40.409 Brackets.insert\ \\left,\\right :call <SID>PutLeftRight()<CR>
 inoremenu 40.410 Brackets.insert\ \\left,\\right <Esc>:call <SID>PutLeftRight()<CR>a
-nnoremenu 40.410 Brackets.insert\ \\bigg :call <SID>PutBigg()<CR>
-inoremenu 40.411 Brackets.insert\ \\bigg <Esc>:call <SID>PutBigg()<CR>a
-nnoremenu 40.412 Brackets.change\ \\left,\\right\ to\ \\bigg :call <SID>ChangeLeftRightBigg()<CR>
-inoremenu 40.413 Brackets.change\ \\left,\\right\ to\ \\bigg <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
+nnoremenu 40.410 Brackets.insert\ (default\ \\bigg) :call <SID>PutBigg()<CR>
+inoremenu 40.411 Brackets.insert\ (default\ \\bigg) <Esc>:call <SID>PutBigg()<CR>a
+nnoremenu 40.412 Brackets.change\ \\left,\\right,\\big,\ etc\ to\ (default\ \\bigg) :call <SID>ChangeLeftRightBigg()<CR>
+inoremenu 40.413 Brackets.change\ \\left,\\right\,\\big,\ etc\ to\ (default\ \\bigg) <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
 
 " Menus for running Latex, etc.
 nnoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab :w<CR>:! xterm -bg ivory -fn 7x14 -e latex % &<CR><Space>
@@ -787,9 +831,5 @@ iab <buffer> \v \vfill
 
 " Personal or Temporary bindings.
 inoremap <buffer> ;; ;
-inoremap <buffer> ;<CR> <CR>\bigskip<CR>\noindent<CR>\textbf{}<Left>
-inoremap <buffer> ;e E\left[\right]<Esc>F\i
 inoremap <buffer> ;i \int_{\mathbf{R}^d}
 inoremap <buffer> ;I \int_{0}^{\infty}
-inoremap <buffer> ;p P\left(\right)<Esc>F\i
-inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
