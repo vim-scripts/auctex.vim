@@ -1,15 +1,15 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	December 2, 2002
-" Version:  2.0004
+" Last Change:	December 6, 2002
+" Version:  2.0005
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 let b:AMSLatex = 0
 let b:DoubleDollars = 0
 " prefix for the "Greek letter" macros (For personal macros, it is ";")
 "let mapleader = "`"
-let mapleader = ";"
+let mapleader = "`"
 
 " Set b:AMSLatex to 1 if you are using AMSlatex.  Otherwise, the program will 
 " attempt to automatically detect the line \usepackage{...amsmath...} 
@@ -87,6 +87,10 @@ noremap <buffer> <C-K> :call <SID>NextTexError()<CR>
 noremap <buffer> <S-Tab> :call <SID>NextTexError()<CR>
 noremap <buffer> <C-Tab> :call <SID>RunLatex()<CR><Esc>
 inoremap <buffer> <C-Tab> <Esc>:call <SID>RunLatex()<CR><Esc>
+
+noremap <buffer> \lr :call <SID>CheckReferences("Reference", "ref")<CR><Space>
+noremap <buffer> \lc :call <SID>CheckReferences("Citation", "cite")<CR><Space>
+noremap <buffer> \lg :call <SID>LookAtLogFile()<CR>gg/LaTeX Warning\\|^!<CR>
 
 " Run the Latex viewer;  change these bindings if you like.
 noremap <buffer> <M-Tab> :call <SID>Xdvi()<CR><Space>
@@ -1246,6 +1250,12 @@ iab <buffer> \v \vfill
 "inoremap <buffer> ;e E\left[\right]<Esc>F\i
 "inoremap <buffer> ;i \int_{\mathbf{R}^d}
 "inoremap <buffer> ;I \int_{0}^{\infty}
+"inoremap <buffer> ;p P\left(\right)<Esc>F\i
+"inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
+"inoremap <buffer> ;2 <CR>\newline<CR>\noindent<CR>p, $\ell$)  <Esc>0a
+"inoremap <buffer> ;s S_t^{\alpha}
+"inoremap <buffer> ;^ ^{(n)}
+"inoremap <buffer> ;d \diamond
 
 " }}}
 " "========================================================================="
