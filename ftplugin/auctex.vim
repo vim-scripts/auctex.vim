@@ -1,14 +1,15 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	November 9, 2002
-" Version:  2.0003
+" Last Change:	December 2, 2002
+" Version:  2.0004
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 let b:AMSLatex = 0
 let b:DoubleDollars = 0
 " prefix for the "Greek letter" macros (For personal macros, it is ";")
-let mapleader = "`"
+"let mapleader = "`"
+let mapleader = ";"
 
 " Set b:AMSLatex to 1 if you are using AMSlatex.  Otherwise, the program will 
 " attempt to automatically detect the line \usepackage{...amsmath...} 
@@ -42,7 +43,8 @@ let b:template_4 = "~/Storage/Latex/exam.tex"
 
 " Vim commands to run latex and the dvi viewer.
 " Must be of the form "! ... % ..."
-let b:latex_command = "! xterm -bg ivory -fn 7x14 -e latex % &"
+"let b:latex_command = "! xterm -bg ivory -fn 7x14 -e latex % &"
+let b:latex_command = "! xterm -bg ivory -fn 7x14 -e latex \\\\nonstopmode \\\\input\\{%\\}; cat %<.log"
 let b:dvi_viewer_command = "! xdvi -expert -s 6 -margins 2cm -geometry 750x950 %< &"
 
 " Switch to the directory of the tex file.  Thanks to Fritz Mehner.
@@ -54,6 +56,10 @@ set tw=0
 " substitute text width
 let b:tw = 79
 
+" If you are using Windows, modify b:latex_command above, and set 
+" b:windows below equal to 1
+let b:windows = 0
+
 " "========================================================================="
 " Insert Templates   {{{
 
@@ -61,10 +67,10 @@ let b:tw = 79
 " F2 inserts a minimal latex template
 " F3 inserts a letter template
 " F4 inserts an exam template
-exe "map <buffer> <F1> :if strpart(getline(1),0,9) != \"\\document\"<CR>0read " . b:template_1 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
-exe "map <buffer> <F2> :if strpart(getline(1),0,9) != \"\\document\"<CR>0read " . b:template_2 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
-exe "map <buffer> <F3> :if strpart(getline(1),0,9) != \"\\document\"<CR>0read " . b:template_3 . "<CR>call search(\"opening\")<CR>endif<Esc><Space>f}i"
-exe "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\document\"<CR>0read " . b:template_4
+exe "map <buffer> <F1> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_1 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
+exe "map <buffer> <F2> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_2 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
+exe "map <buffer> <F3> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_3 . "<CR>call search(\"opening\")<CR>endif<Esc><Space>f}i"
+exe "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_4
 
 "       dictionary
 " set dictionary+=(put filename and path here)
@@ -77,6 +83,8 @@ exe "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\document\"<CR>0read " 
 
 " Run Latex;  change these bindings if you like.
 noremap <buffer> K :call <SID>RunLatex()<CR><Esc>
+noremap <buffer> <C-K> :call <SID>NextTexError()<CR>
+noremap <buffer> <S-Tab> :call <SID>NextTexError()<CR>
 noremap <buffer> <C-Tab> :call <SID>RunLatex()<CR><Esc>
 inoremap <buffer> <C-Tab> <Esc>:call <SID>RunLatex()<CR><Esc>
 
@@ -85,10 +93,10 @@ noremap <buffer> <M-Tab> :call <SID>Xdvi()<CR><Space>
 inoremap <buffer> <M-Tab> <Esc>:call <SID>Xdvi()<CR><Space>
 
 " Run Ispell on either the buffer, or the visually selected word.
-noremap <S-Insert> :w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
-inoremap <S-Insert> <Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
+noremap <buffer> <S-Insert> :w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
+inoremap <buffer> <S-Insert> <Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
 "vnoremap <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:silent !rm ispell.tmp*<CR>pkdd
-vnoremap <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
+vnoremap <buffer> <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
 " Find Latex Errors
 " To find the tex error, first run Latex (see the 2 previous maps).
 " If there is an error, press "x" or "r" to stop the Tex processing.
@@ -102,7 +110,10 @@ inoremap <buffer> <S-Tab> <Esc>:call <SID>NextTexError()<CR><Space>
 
 function! s:RunLatex()
     update
-    exe b:latex_command
+    exe "silent " . b:latex_command
+    if b:windows != 1
+	call <SID>NextTexError()
+    endif
 endfunction
 
 " Stop warnings, since the log file is modified externally and then 
@@ -110,26 +121,31 @@ endfunction
 au BufRead *.log    set bufhidden=unload
 
 function! s:NextTexError()
-    only
-    edit +1 %<.log
+    silent only
+    split +1 %<.log
     if search('^l\.\d') == 0
-	edit #
-	redraw
+	bwipeout
 	call input("\nNo (More) Errors Found\n\nPress 'enter' to go on.")
     else
+	syntax clear
+	syntax match err /! .*/
+	syn match err /^ l\.\d.*\n.*$/
+	highlight link err ToDo
 	let linenumber = matchstr(getline('.'), '\d\+')
-	let errorposition = col("$") - strlen(linenumber) - 4
+	let errorposition = col("$") - strlen(linenumber) - 5
+	if errorposition < 1
+	    let command = "normal " . linenumber . "Gzz\<C-W>wzz\<C-W>w"
+	else
+	    let command = "normal " . linenumber . "G" . errorposition . "lzz\<C-W>wzz\<C-W>w"
+	endif
 	    "Put a space in the .log file so that you can see where you were,
 	    "and move on to the next latex error.
 	s/^/ /
 	write
-	split #
-	exe "normal " . linenumber . "G" . errorposition . "lzz\<C-W>wzz\<C-W>w"
+	wincmd x
+	exe command
     endif
 endfunction
-
-noremap <buffer> <F9> <C-W>o
-inoremap <buffer> <F9> <C-O><C-W>o
 
 " Run xdvi
 function! s:Xdvi()
@@ -137,6 +153,56 @@ function! s:Xdvi()
     exe b:latex_command
     exe b:latex_command
     exe b:dvi_viewer_command 
+endfunction
+
+function! s:CheckReferences(name, ref)
+    "exe "noremap \<buffer> \<C-L> :call \<SID>CheckReferences(\"" . a:name . "\",\"" . a:ref . "\")\<CR>\<Space>"
+    only
+    edit +1 %<.log
+    syntax clear
+    syntax match err /LaTeX Warning/
+    highlight link err ToDo
+    if search('^LaTeX Warning: ' . a:name) == 0
+	edit #
+	redraw
+	call input("\nNo (More) " . a:name . " Errors Found\n\nPress 'enter' to go on.")
+    else
+	let linenumber = matchstr(getline('.'), '\d\+\.$')
+	let linenumber = strpart(linenumber, 0, strlen(linenumber)-1)
+	let reference = matchstr(getline('.'), "`.*\'")
+	let reference = strpart(reference, 1, strlen(reference)-2)
+	    "Put a space in the .log file so that you can see where you were,
+	    "and move on to the next latex error.
+	s/^/ /
+	write
+	split #
+	exe "normal " . linenumber . "Gzz\<C-W>wzz\<C-W>w"
+	exe "normal /\\\\" . a:ref . "{" . reference . "}\<CR>"
+	exe "normal /" . reference . "\<CR>"
+    endif
+endfunction
+
+function! s:LookAtLogFile()
+    only
+    edit +1 %<.log
+    syntax clear
+    syntax match err /LaTeX Warning/
+    syntax match err /! .*/
+    syntax match err /^Overfull/
+    syntax match err /^Underfull/
+    highlight link err ToDo
+    noremap <buffer> K :call <SID>GetLineFromLogFile()<CR>
+    split #
+    wincmd b
+    /LaTeX Warning\|^\s*!\|^Overfull\|^Underfull
+    let @/='LaTeX Warning\|^\s*!\|^Overfull\|^Underfull'
+    echo "\nGo to the line in the log file which mentions the error\nthen type K to go to the line\nn to go to the next warning\n"
+endfunction
+
+function! s:GetLineFromLogFile()
+    let line = matchstr(getline("."), 'line \d\+')
+    wincmd t
+    exe strpart(line, 5, strlen(line)-5)
 endfunction
 
 " Run Ispell (Thanks the Charles Campbell)
@@ -462,11 +528,12 @@ inoremap <buffer> <Leader>U \Upsilon
 inoremap <buffer> <Leader>X \Xi
 inoremap <buffer> <Leader>Y \Psi
 inoremap <buffer> <Leader>0 \emptyset
-inoremap <buffer> <Leader>1 \left
-inoremap <buffer> <Leader>2 \right
-inoremap <buffer> <Leader>3 \Big
+inoremap <buffer> <Leader>2 \sqrt{}<Left>
 inoremap <buffer> <Leader>6 \partial
 inoremap <buffer> <Leader>8 \infty
+inoremap <buffer> <Leader><F1> \left
+inoremap <buffer> <Leader><F2> \right
+inoremap <buffer> <Leader><F3> \Big
 inoremap <buffer> <Leader>/ \frac{}{}<Esc>F}i
 inoremap <buffer> <Leader>% \frac{}{}<Esc>F}i
 inoremap <buffer> <Leader>@ \circ
@@ -869,7 +936,7 @@ function! s:CompleteSlash(left,right)
     endif
 endfunction
 
-" Double ampersands, if you are in an eqnarray or eqnarray environment.
+" Double ampersands, if you are in an eqnarray or eqnarray* environment.
 function! s:DoubleAmpersands()
     let stop = 0
     let currentline = line(".")
@@ -1141,12 +1208,18 @@ inoremenu 40.413 Brackets.change\ \\left,\\right\,\\big,\ etc\ to\ (default\ \\n
 " Menus for running Latex, etc.
 nnoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab :w<CR>:silent ! xterm -bg ivory -fn 7x14 -e latex % &<CR>
 inoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab <Esc>:w<CR>:silent ! xterm -bg ivory -fn 7x14 -e latex % &<CR>
-nnoremenu 50.402 Latex.next\ error\ \ \ Shift-Tab :call <SID>NextTexError()<CR><Space>
-inoremenu 50.402 Latex.next\ error\ \ \ Shift-Tab <Esc>:call <SID>NextTexError()<CR><Space>
-nnoremenu 50.403 Latex.run\ xdvi\ \ \ \ \ Alt-Tab :call <SID>Xdvi()<CR><Space>
-inoremenu 50.403 Latex.run\ xdvi\ \ \ \ \ Alt-Tab <Esc>:call <SID>Xdvi()<CR><Space>
-nnoremenu 50.404 Latex.run\ ispell\ \ \ Shift-Ins :w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
-inoremenu 50.404 Latex.run\ ispell\ \ \ Shift-Ins <Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
+nnoremenu 50.402 Latex.next\ math\ error\ \ \ Shift-Tab :call <SID>NextTexError()<CR><Space>
+inoremenu 50.402 Latex.next\ math\ error\ \ \ Shift-Tab <Esc>:call <SID>NextTexError()<CR><Space>
+nnoremenu 50.403 Latex.next\ ref\ error :call <SID>CheckReferences("Reference", "ref")<CR><Space>
+inoremenu 50.403 Latex.next\ ref\ error <Esc>:call <SID>CheckReferences("Reference", "ref")<CR><Space>
+nnoremenu 50.404 Latex.next\ cite\ error :call <SID>CheckReferences("Citation", "cite")<CR><Space>
+inoremenu 50.404 Latex.next\ cite\ error <Esc>:call <SID>CheckReferences("Citation", "cite")<CR><Space>
+nnoremenu 50.405 Latex.view\ log\ file :call <SID>LookAtLogFile()<CR>
+inoremenu 50.405 Latex.view\ log\ file <Esc>:call <SID>LookAtLogFile()<CR>
+nnoremenu 50.406 Latex.view\ dvi\ \ \ \ \ Alt-Tab :call <SID>Xdvi()<CR><Space>
+inoremenu 50.406 Latex.view\ dvi\ \ \ \ \ Alt-Tab <Esc>:call <SID>Xdvi()<CR><Space>
+nnoremenu 50.407 Latex.run\ ispell\ \ \ Shift-Ins :w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
+inoremenu 50.407 Latex.run\ ispell\ \ \ Shift-Ins <Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
 "nnoremenu 50.405 Latex.run\ engspchk :so .Vim/engspchk.vim<CR>
 "inoremenu 50.405 Latex.run\ engspchk <C-O>:so .Vim/engspchk.vim<CR>
 
@@ -1168,17 +1241,11 @@ iab <buffer> \v \vfill
 " "========================================================================="
 " Personal or Temporary bindings.   {{{
 
-inoremap <buffer> ;; ;
-inoremap <buffer> ;<CR> <CR>\bigskip<CR>\noindent<CR>\textbf{}<Left>
-inoremap <buffer> ;e E\left[\right]<Esc>F\i
-inoremap <buffer> ;i \int_{\mathbf{R}^d}
-inoremap <buffer> ;I \int_{0}^{\infty}
-inoremap <buffer> ;p P\left(\right)<Esc>F\i
-inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
-inoremap <buffer> ;2 <CR>\newline<CR>\noindent<CR>p, $\ell$)  <Esc>0a
-inoremap <buffer> ;s S_t^{\alpha}
-inoremap <buffer> ;^ ^{(n)}
-inoremap <buffer> ;d \diamond
+"inoremap <buffer> ;; ;
+"inoremap <buffer> ;<CR> <CR>\bigskip<CR>\noindent<CR>\textbf{}<Left>
+"inoremap <buffer> ;e E\left[\right]<Esc>F\i
+"inoremap <buffer> ;i \int_{\mathbf{R}^d}
+"inoremap <buffer> ;I \int_{0}^{\infty}
 
 " }}}
 " "========================================================================="
