@@ -1,29 +1,33 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	October 1, 2002
-" Version:  2.0
+" Last Change:	October 23, 2002
+" Version:  2.0001
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 let b:AMSLatex = 0
 let b:DoubleDollars = 0
+let mapleader = "`"
 
 " Set b:AMSLatex to 1 if you are using AMSlatex.  Otherwise, the program will 
 " attempt to automatically detect the line \usepackage{...amsmath...} 
 " (uncommented), which would indicate AMSlatex.  This is mainly for the 
 " function keys F1 - F5, which insert the most common environments, and 
 " C-F1 - C-F5, which change them.  search for "amslatex" for further 
-" information (line 328).
+" information (line 337).
 " Set b:DoubleDollars to 1 if you use $$...$$ instead of \[...\]
 " With b:DoubleDollars = 1, C-F1 - C-F5 will not work in nested environments.
 
 " Auctex-style macros for Latex typing.
 " You will have to customize the functions RunLatex(), Xdvi(), 
-" and the maps for inserting template files, on lines 154 - 157.
+" and the maps for inserting template files, on lines 158 - 161
 
 " Thanks to Peppe Guldberg for important suggestions.
 "
 " Please read the comments in the file for an explanation of all the features.
+" One of the main features is that the "mapleader" (set to "`" see above),
+" triggers a number of macros (see line 733).  For example, 
+" `a would result in \alpha.  There are many other features;  read the file.
 
 " Switch to the directory of the tex file.  Thanks to Fritz Mehner.
 " This is useful for starting xdvi, or going to the next tex error.
@@ -168,6 +172,9 @@ inoremap <buffer> <M-b> <Left>\mathbf{<Right>}<Esc>hvUla
 vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 
 " Cal:  (3 alternative macros:  see Boldface)
+" In the first, \mathcal{} appears.
+" In the second, you type the letter, and it capitalizes the letter
+" and surrounds it with \mathcal{}
 " The third one also inserts \cite{}, if the previous character is a blank
 " inoremap <buffer> <M-c> \mathcal{}<Left>
 " inoremap <buffer> <M-c> <Left>\mathcal{<Right>}<Esc>h~a
@@ -573,11 +580,10 @@ function! s:PutInNonumber()
 endfunction
 
 " Left-right (3 alternatives)
-" In the first version, you type Alt-L and then the bracket
-" In the second version, you type the bracket, and then Alt-L
-" The second version matches with the Alt-B and Alt-C macros,
-" if you use the uncommented versions.  It also doubles as a command
-" for inserting \label{}
+" In the first version, you type Alt-l and then the bracket
+" In the second version, you type the bracket, and then Alt-l
+" It also doubles as a command for inserting \label{}, if the previous
+" character is blank.
 " The third version is like the second version.  Use it if you have
 " disabled automatic bracket completion.
 "inoremap <buffer> <M-l>( \left(\right)<Left><Left><Left><Left><Left><Left><Left>
@@ -688,7 +694,7 @@ function! s:CompleteSlash(left,right)
     endif
 endfunction
 
-" Double ampersands, unless you are in an array or tabular environment
+" Double ampersands, if you are in an eqnarray or eqnarray environment.
 function! s:DoubleAmpersands()
     let stop = 0
     let currentline = line(".")
@@ -708,105 +714,105 @@ function! s:DoubleAmpersands()
     endif
 endfunction
 
+" No timeout.  Applies to mappings such as `a for \alpha
+set notimeout
+
 " Embrace the visual region with the symbol.
 " This assumes that you are using
 " set selection=exclusive
 " If you are not, replace these macros with ones like this.
 "vnoremap <buffer> ( <C-C>`>a)<C-C>`<i(<Esc>
 vnoremap <buffer> <M-l> <C-C>`>a\right<Esc>`<i\left<Esc>
-vnoremap <buffer> `( <C-C>`>a)<Esc>`<i(<Esc>
-vnoremap <buffer> `[ <C-C>`>a]<Esc>`<i[<Esc>
-vnoremap <buffer> `{ <C-C>`>a}<Esc>`<i{<Esc>
+vnoremap <buffer> <Leader>( <C-C>`>a)<Esc>`<i(<Esc>
+vnoremap <buffer> <Leader>[ <C-C>`>a]<Esc>`<i[<Esc>
+vnoremap <buffer> <Leader>{ <C-C>`>a}<Esc>`<i{<Esc>
 vnoremap <buffer> & <C-C>`>a&<Esc>`<i&<Esc>
-vnoremap <buffer> `$ <C-C>`>a$<Esc>`<i$<Esc>
+vnoremap <buffer> <Leader>$ <C-C>`>a$<Esc>`<i$<Esc>
 vnoremap <buffer> <M-4> <C-C>`>a$<Esc>`<i$<Esc>
 
-" No timeout.  Applies to mappings such as `a for \alpha
-set notimeout
-
 " Greek letter, AucTex style bindings
-inoremap <buffer> `` ``
-inoremap <buffer> `a \alpha
-inoremap <buffer> `b \beta
-inoremap <buffer> `c \chi
-inoremap <buffer> `d \delta
-inoremap <buffer> `e \varepsilon
-inoremap <buffer> `f \varphi
-inoremap <buffer> `g \gamma
-inoremap <buffer> `h \eta
-inoremap <buffer> `i \int_{}^{}<Esc>3hi
+inoremap <buffer> <Leader><Leader> <Leader>
+inoremap <buffer> <Leader>a \alpha
+inoremap <buffer> <Leader>b \beta
+inoremap <buffer> <Leader>c \chi
+inoremap <buffer> <Leader>d \delta
+inoremap <buffer> <Leader>e \varepsilon
+inoremap <buffer> <Leader>f \varphi
+inoremap <buffer> <Leader>g \gamma
+inoremap <buffer> <Leader>h \eta
+inoremap <buffer> <Leader>i \int_{}^{}<Esc>3hi
 	    " Or \iota or \infty or \in
-inoremap <buffer> `k \kappa
-inoremap <buffer> `l \lambda
-inoremap <buffer> `m \mu
-inoremap <buffer> `n \nu
-inoremap <buffer> `o \omega
-inoremap <buffer> `p \pi
-inoremap <buffer> `q \theta
-inoremap <buffer> `r \rho
-inoremap <buffer> `s \sigma
-inoremap <buffer> `t \tau
-inoremap <buffer> `u \upsilon
-inoremap <buffer> `v \vee
-inoremap <buffer> `w \wedge
-inoremap <buffer> `x \xi
-inoremap <buffer> `y \psi
-inoremap <buffer> `z \zeta
-inoremap <buffer> `D \Delta
-inoremap <buffer> `I \int_{}^{}<Esc>3hi
-inoremap <buffer> `F \Phi
-inoremap <buffer> `G \Gamma
-inoremap <buffer> `L \Lambda
-inoremap <buffer> `N \nabla
-inoremap <buffer> `O \Omega
-inoremap <buffer> `Q \Theta
-inoremap <buffer> `R \varrho
-inoremap <buffer> `S \sum_{}^{}<Esc>3hi
-inoremap <buffer> `U \Upsilon
-inoremap <buffer> `X \Xi
-inoremap <buffer> `Y \Psi
-inoremap <buffer> `0 \emptyset
-inoremap <buffer> `1 \left
-inoremap <buffer> `2 \right
-inoremap <buffer> `3 \Big
-inoremap <buffer> `6 \partial
-inoremap <buffer> `8 \infty
-inoremap <buffer> `/ \frac{}{}<Esc>2hi
-inoremap <buffer> `% \frac{}{}<Esc>2hi
-inoremap <buffer> `@ \circ
-inoremap <buffer> `\| \Big\|
-inoremap <buffer> `= \equiv
-inoremap <buffer> `\ \setminus
-inoremap <buffer> `. \cdot
-inoremap <buffer> `* \times
-inoremap <buffer> `& \wedge
-inoremap <buffer> `- \bigcap
-inoremap <buffer> `+ \bigcup
-inoremap <buffer> `( \subset
-inoremap <buffer> `) \supset
-inoremap <buffer> `< \le
-inoremap <buffer> `> \ge
-inoremap <buffer> `, \nonumber
-inoremap <buffer> `: \dots
-inoremap <buffer> `~ \tilde{}<Left>
-inoremap <buffer> `^ \hat{}<Left>
-inoremap <buffer> `; \dot{}<Left>
-inoremap <buffer> `_ \bar{}<Left>
-inoremap <buffer> `<M-c> \cos
-inoremap <buffer> `<C-E> \exp\left(\right)<Esc>6hi
-inoremap <buffer> `<C-I> \in
-inoremap <buffer> `<C-J> \downarrow
-inoremap <buffer> `<C-L> \log
-inoremap <buffer> `<C-P> \uparrow
-inoremap <buffer> `<Up> \uparrow
-inoremap <buffer> `<C-N> \downarrow
-inoremap <buffer> `<Down> \downarrow
-inoremap <buffer> `<C-F> \to
-inoremap <buffer> `<Right> \lim_{}<Left>
-inoremap <buffer> `<C-S> \sin
-inoremap <buffer> `<C-T> \tan
-inoremap <buffer> `<M-l> \ell
-inoremap <buffer> `<CR> \nonumber\\<CR><HOME>&&<Left>
+inoremap <buffer> <Leader>k \kappa
+inoremap <buffer> <Leader>l \lambda
+inoremap <buffer> <Leader>m \mu
+inoremap <buffer> <Leader>n \nu
+inoremap <buffer> <Leader>o \omega
+inoremap <buffer> <Leader>p \pi
+inoremap <buffer> <Leader>q \theta
+inoremap <buffer> <Leader>r \rho
+inoremap <buffer> <Leader>s \sigma
+inoremap <buffer> <Leader>t \tau
+inoremap <buffer> <Leader>u \upsilon
+inoremap <buffer> <Leader>v \vee
+inoremap <buffer> <Leader>w \wedge
+inoremap <buffer> <Leader>x \xi
+inoremap <buffer> <Leader>y \psi
+inoremap <buffer> <Leader>z \zeta
+inoremap <buffer> <Leader>D \Delta
+inoremap <buffer> <Leader>I \int_{}^{}<Esc>3hi
+inoremap <buffer> <Leader>F \Phi
+inoremap <buffer> <Leader>G \Gamma
+inoremap <buffer> <Leader>L \Lambda
+inoremap <buffer> <Leader>N \nabla
+inoremap <buffer> <Leader>O \Omega
+inoremap <buffer> <Leader>Q \Theta
+inoremap <buffer> <Leader>R \varrho
+inoremap <buffer> <Leader>S \sum_{}^{}<Esc>3hi
+inoremap <buffer> <Leader>U \Upsilon
+inoremap <buffer> <Leader>X \Xi
+inoremap <buffer> <Leader>Y \Psi
+inoremap <buffer> <Leader>0 \emptyset
+inoremap <buffer> <Leader>1 \left
+inoremap <buffer> <Leader>2 \right
+inoremap <buffer> <Leader>3 \Big
+inoremap <buffer> <Leader>6 \partial
+inoremap <buffer> <Leader>8 \infty
+inoremap <buffer> <Leader>/ \frac{}{}<Esc>2hi
+inoremap <buffer> <Leader>% \frac{}{}<Esc>2hi
+inoremap <buffer> <Leader>@ \circ
+inoremap <buffer> <Leader>\| \Big\|
+inoremap <buffer> <Leader>= \equiv
+inoremap <buffer> <Leader>\ \setminus
+inoremap <buffer> <Leader>. \cdot
+inoremap <buffer> <Leader>* \times
+inoremap <buffer> <Leader>& \wedge
+inoremap <buffer> <Leader>- \bigcap
+inoremap <buffer> <Leader>+ \bigcup
+inoremap <buffer> <Leader>( \subset
+inoremap <buffer> <Leader>) \supset
+inoremap <buffer> <Leader>< \le
+inoremap <buffer> <Leader>> \ge
+inoremap <buffer> <Leader>, \nonumber
+inoremap <buffer> <Leader>: \dots
+inoremap <buffer> <Leader>~ \tilde{}<Left>
+inoremap <buffer> <Leader>^ \hat{}<Left>
+inoremap <buffer> <Leader>; \dot{}<Left>
+inoremap <buffer> <Leader>_ \bar{}<Left>
+inoremap <buffer> <Leader><M-c> \cos
+inoremap <buffer> <Leader><C-E> \exp\left(\right)<Esc>6hi
+inoremap <buffer> <Leader><C-I> \in
+inoremap <buffer> <Leader><C-J> \downarrow
+inoremap <buffer> <Leader><C-L> \log
+inoremap <buffer> <Leader><C-P> \uparrow
+inoremap <buffer> <Leader><Up> \uparrow
+inoremap <buffer> <Leader><C-N> \downarrow
+inoremap <buffer> <Leader><Down> \downarrow
+inoremap <buffer> <Leader><C-F> \to
+inoremap <buffer> <Leader><Right> \lim_{}<Left>
+inoremap <buffer> <Leader><C-S> \sin
+inoremap <buffer> <Leader><C-T> \tan
+inoremap <buffer> <Leader><M-l> \ell
+inoremap <buffer> <Leader><CR> \nonumber\\<CR><HOME>&&<Left>
 
 "  With this map, <Space> will split up a long line, keeping the dollar
 "  signs together (see the next function, TexFormatLine).
