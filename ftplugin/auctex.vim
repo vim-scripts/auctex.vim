@@ -1,15 +1,29 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	September 3, 2002
-" Version:  1.6.1
+" Last Change:	October 1, 2002
+" Version:  2.0
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
+
+let b:AMSLatex = 0
+let b:DoubleDollars = 0
+
+" Set b:AMSLatex to 1 if you are using AMSlatex.  Otherwise, the program will 
+" attempt to automatically detect the line \usepackage{...amsmath...} 
+" (uncommented), which would indicate AMSlatex.  This is mainly for the 
+" function keys F1 - F5, which insert the most common environments, and 
+" C-F1 - C-F5, which change them.  search for "amslatex" for further 
+" information (line 328).
+" Set b:DoubleDollars to 1 if you use $$...$$ instead of \[...\]
+" With b:DoubleDollars = 1, C-F1 - C-F5 will not work in nested environments.
 
 " Auctex-style macros for Latex typing.
 " You will have to customize the functions RunLatex(), Xdvi(), 
-" and the maps for inserting template files, on lines 141 - 144.
+" and the maps for inserting template files, on lines 154 - 157.
 
 " Thanks to Peppe Guldberg for important suggestions.
+"
+" Please read the comments in the file for an explanation of all the features.
 
 " Switch to the directory of the tex file.  Thanks to Fritz Mehner.
 " This is useful for starting xdvi, or going to the next tex error.
@@ -25,7 +39,7 @@ noremap <buffer> K :call <SID>RunLatex()<CR><Esc>
 noremap <buffer> <C-Tab> :call <SID>RunLatex()<CR><Esc>
 inoremap <buffer> <C-Tab> <Esc>:call <SID>RunLatex()<CR><Esc>
 
-" Emacs-type bindings;  feel free to delete these, you vi purists!
+" Emacs-type bindings;  vi purists, feel free to delete these!
 inoremap <buffer> <C-A> <Home>
 inoremap <buffer> <C-B> <Left>
 inoremap <buffer> <C-D> <Del>
@@ -137,8 +151,8 @@ vnoremap <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>
 " F2 inserts a minimal latex template
 " F3 inserts a letter template
 " F4 inserts an exam template
-map <buffer> <F1> :if strpart(getline(1),0,9) != "\\document"<CR>0read ~/.Vim/latex<CR>normal 23j$<CR>endif<Esc><Space>i
-map <buffer> <F2> :if strpart(getline(1),0,9) != "\\document"<CR>0read ~/.Vim/min-latex<CR>normal 4j$<CR>endif<Esc><Space>i
+map <buffer> <F1> :if strpart(getline(1),0,9) != "\\document"<CR>0read ~/.Vim/latex<CR>call search("title")<CR>endif<Esc><Space>$i
+map <buffer> <F2> :if strpart(getline(1),0,9) != "\\document"<CR>0read ~/.Vim/min-latex<CR>call search("title")<CR>endif<Esc><Space>$i
 map <buffer> <F3> :inoremap <buffer> . .  <CR>:inoremap <buffer> ? ?  <CR>:if strpart(getline(1),0,9) != "\\document"<CR>0read ~/.Vim/letter<CR>normal 9jt}<CR>endif<Esc><Space>i
 map <buffer> <F4> :if strpart(getline(1),0,9) != "\\document"<CR>!cp ~/Storage/Latex/urmathexam.sty urmathexam.sty<CR>0read ~/Storage/Latex/exam.tex<CR>endif<Esc><Space>
 
@@ -306,57 +320,133 @@ inoremap <buffer> ^ <C-R>=<SID>SuperBracket()<CR>
 " Since " is not available, <Alt-'> gives it.
 inoremap <buffer> <M-'> "
 
-" Begin-End
+" \begin{...}...\end{...}
 " F1 - F5 inserts various environments (insert mode).
 " Ctrl-F1 through Ctrl-F5 replaces the current environment
 "     with \begin-\end{equation} through \begin-\end{}.
+
+" The next function searches until \begin{document}
+" \usepackage{...amsmath...}, and takes this to mean that the file is 
+" an amslatex file.  But a commented line such as
+" % \usepackage{...amsmath...} is ignored.  To adjust the number of 
+" lines searched, change the variable b:LinesToSearch below.
+" The function keys have the following mappings.  These include 
+" \begin{...}...\end{...}, except for \[...\]
+"
+"  KEY         LATEX                    AMSLATEX
+" 
+"  F1          equation                 equation
+"  F2          \[...\]                  equation*
+"  F3          eqnarray                 align
+"  F4          eqnarray*                align*
+"  F5          asks for environment     asks for environment
+"
+" and C-F1 - C-F5, which are used to change environments, are similar.
+
+function! s:AmsLatex(var)
+    let amslatex = a:var
+    if amslatex == 0
+	let n = 1
+	let line = getline(n)
+	while line !~ '\\begin{document}' && amslatex == 0
+	    if line =~ '^[^%]*\\usepackage{.*amsmath.*}'
+		let amslatex = 1
+	    endif
+	    let n = n + 1
+	    let line = getline(n)
+	endwhile
+    endif
+    return amslatex
+endfunction
+
+function! s:FTwo(var)
+    if a:var == 0
+	if b:DoubleDollars == 0
+	    return "\\[\<CR>\<CR>\\]\<Up>"
+	else
+	    return "$$\<CR>\<CR>$$\<Up>"
+	endif
+    else
+	return "\\begin{equation*}\<CR>\<CR>\\end{equation*}\<Up>"
+    endif
+endfunction
+function! s:FThree(var)
+    if a:var == 0
+	return "\\begin{eqnarray}\<CR>\\label{}\<CR>\<CR>\\end{eqnarray}\<Esc>2k$i"
+    else
+	return "\\begin{align}\<CR>\\label{}\<CR>\<CR>\\end{align}\<Esc>2k$i"
+    endif
+endfunction
+function! s:FFour(var)
+    if a:var == 0
+	return "\\begin{eqnarray*}\<CR>\<CR>\\end{eqnarray*}\<Up>"
+    else
+	return "\\begin{align*}\<CR>\<CR>\\end{align*}\<Up>"
+    endif
+endfunction
+function! s:CFTwo(var)
+    if a:var == 0
+	call <SID>Change('[', 0, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)
+    else
+	call <SID>Change('equation*', 0, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)
+    end
+endfunction
+function! s:CFThree(var)
+    if a:var == 0
+	call <SID>Change('eqnarray', 1, '', 1)
+    else
+	call <SID>Change('align', 1, '', 1)
+    end
+endfunction
+function! s:CFFour(var)
+    if a:var == 0
+	call <SID>Change('eqnarray*', 0, '\\nonumber', 0)
+    else
+	call <SID>Change('align*', 0, '\\nonumber', 0)
+    end
+endfunction
+
 inoremap <buffer> <F1> \begin{equation}<CR>\label{}<CR><CR>\end{equation}<Esc>2k$i
-inoremap <buffer> <F3> \begin{eqnarray}<CR>\label{}<CR><CR>\end{eqnarray}<Esc>2k$i
-inoremap <buffer> <F4> \begin{eqnarray*}<CR><CR>\end{eqnarray*}<Up>
+inoremap <buffer> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
+
+noremap <buffer> <C-F1> :call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
+inoremap <buffer> <C-F1> <Esc>:call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
+noremap <buffer> <C-F2> :call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <C-F2> <Esc>:call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer> <C-F3> :call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+inoremap <buffer> <C-F3> <Esc>:call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+noremap <buffer> <C-F4> :call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <C-F4> <Esc>:call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+
 inoremap <buffer> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
 inoremap <buffer> <F7> \noindent<CR>\textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
 
-" The following are for $$..$$ in place of \[..\]
-"noremap <buffer> <C-F1> /\\end\\|\$\$<CR>S\end{equation}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{equation}<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>`<:call <SID>PutInLabel()<CR>a
-"inoremap <buffer> <C-F1> <Esc>/\\end\\|\$\$<CR>S\end{equation}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{equation}<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>`<:call <SID>PutInLabel()<CR>a
-"inoremap <buffer> <F2> $$<CR><CR>$$<Up>
-"noremap <buffer> <C-F2> /\\end<CR>S$$<Esc>v?\\begin<CR><Esc>S$$<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>:'<+1g/\\label/delete<CR>
-"inoremap <buffer> <C-F2> <Esc>/\\end<CR>S$$<Esc>v?\\begin<CR><Esc>S$$<Esc>:'<,'>s/&\\|\\lefteqn{\\|\\nonumber\\|\\\\//e<CR>:'<+1g/\\label/delete<CR>
-"noremap <buffer> <C-F3> /\\end\\|\$\$<CR>S\end{eqnarray}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray}<Esc>:call <SID>PutInNonumber ()<CR>`<:call <SID>PutInLabel ()<CR>a
-"inoremap <buffer> <C-F3> <Esc>/\\end\\|\$\$<CR>S\end{eqnarray}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray}<Esc>:call <SID>PutInNonumber ()<CR>`<:call <SID>PutInLabel ()<CR>a
-"noremap <buffer> <C-F4> /\\end\\|\$\$<CR>S\end{eqnarray*}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray*}<Esc>:'<,'>s/\\nonumber//e<CR>:'<+1g/\\label/delete<CR>
-"inoremap <buffer> <C-F4> <Esc>/\\end\\|\$\$<CR>S\end{eqnarray*}<Esc>v?\\begin\\|\$\$<CR><Esc>S\begin{eqnarray*}<Esc>:'<,'>s/\\nonumber//e<CR>:'<+1g/\\label/delete<CR>
-
-" Uncomment this function if you use the alternate mappings for <C-F1>, etc.
-"function! s:PutInLabel()
-"   if (-1 == match(getline(line(".")+1),"\\label"))
-"       put ='label{}'
-"       normal $h
-"   endif
-"endfunction
-
-noremap <buffer> <C-F1> :call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
-inoremap <buffer> <C-F1> <Esc>:call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
-inoremap <buffer> <F2> \[<CR><CR>\]<Up>
-noremap <buffer> <C-F2> :call <SID>Change('[', 0, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
-inoremap <buffer> <C-F2> <Esc>:call <SID>Change('[', 0, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
-noremap <buffer> <C-F3> :call <SID>Change('eqnarray', 1, '', 1)<CR>i
-inoremap <buffer> <C-F3> <Esc>:call <SID>Change('eqnarray', 1, '', 1)<CR>i
-noremap <buffer> <C-F4> :call <SID>Change('eqnarray*', 0, '\\nonumber', 0)<CR><Esc>
-inoremap <buffer> <C-F4> <Esc>:call <SID>Change('eqnarray*', 0, '\\nonumber', 0)<CR><Esc>
-
 function! s:Change(env, label, delete, putInNonumber)
     if a:env == '['
-	let first = '\\['
-	let second = '\\]'
+	if b:DoubleDollars == 0
+	    let first = '\\['
+	    let second = '\\]'
+	else
+	    let first = '$$'
+	    let second = '$$'
+	endif
     else
 	let first = '\\begin{' . a:env . '}'
 	let second = '\\end{' . a:env . '}'
     endif
-    let bottom = searchpair('\\\[\|\\begin{','','\\\]\|\\end{','')
-    s/\\\]\|\\end{.\{-}}/\=second/
-    let top = searchpair('\\\[\|\\begin{','','\\\]\|\\end{','b')
-    s/\\\[\|\\begin{.\{-}}/\=first/
+    if b:DoubleDollars == 0
+	let bottom = searchpair('\\\[\|\\begin{','','\\\]\|\\end{','')
+	s/\\\]\|\\end{.\{-}}/\=second/
+	let top = searchpair('\\\[\|\\begin{','','\\\]\|\\end{','b')
+	s/\\\[\|\\begin{.\{-}}/\=first/
+    else
+	let bottom = search('\$\$\|\\end{')
+	s/\$\$\|\\end{.\{-}}/\=second/
+	let top = search('\$\$\|\\begin{','b')
+	s/\$\$\|\\begin{.\{-}}/\=first/
+    end
     if a:delete != ''
 	exe top . "," . bottom . 's/' . a:delete . '//e'
     endif
@@ -440,14 +530,23 @@ function! s:ArgumentsForArray(arg)
     normal kgJj
 endfunction
 
-" Quote or unquote lines, depending on whether you use $$..$$ or \[..\]
 function! s:ChangeEnvironment(env)
-    call searchpair('\\\[\|\\begin{','','\\\]\|\\end{','')
+    if b:DoubleDollars == 0
+	call searchpair('\\\[\|\\begin{','','\\\]\|\\end{','')
+    else
+	call search('\$\$\|\\end{')
+    end
     let l = getline(line("."))
     let indent = strpart(l, 0, match(l, '\S'))
-    s/\\\]\|\\end{.\{-}}/\='\\end{' . a:env . '}'/
-    call searchpair('\\\[\|\\begin{','','\\\]\|\\end{','b')
-    s/\\\[\|\\begin{.\{-}}/\='\\begin{' . a:env . '}'/
+    if b:DoubleDollars == 0
+	s/\\\]\|\\end{.\{-}}/\='\\end{' . a:env . '}'/
+	call searchpair('\\\[\|\\begin{','','\\\]\|\\end{','b')
+	s/\\\[\|\\begin{.\{-}}/\='\\begin{' . a:env . '}'/
+    else
+	s/\$\$\|\\end{.\{-}}/\='\\end{' . a:env . '}'/
+	call search('\$\$\|\\begin{','b')
+	s/\$\$\|\\begin{.\{-}}/\='\\begin{' . a:env . '}'/
+    end
     +
     if a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\)$'
 	if (-1 == match(getline(line(".")),"\\label"))
@@ -600,12 +699,12 @@ function! s:DoubleAmpersands()
 	    let stop = 1
 	endif
     endwhile
-    if thisline =~ '\\begin{\(array\|tabular\)}'
-	return "&"
+    if thisline =~ '\\begin{eqnarray\**}'
+	return "&&\<Left>"
     elseif strpart(getline(line(".")),col(".")-2,2) == "&&"
 	return "\<Del>"
     else
-	return "&&\<Left>"
+	return "&"
     endif
 endfunction
 
