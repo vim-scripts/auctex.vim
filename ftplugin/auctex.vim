@@ -1,7 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	December 3, 2001
+" Last Change:	December 9, 2001
+" Version:  1.01
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 " Auctex-style macros for Latex typing.
@@ -683,7 +684,7 @@ function! s:PutBigg()
     let s:c = getline(line("."))[col(".") - 1]
     if s:b == '\'
 	exe "normal ibigg\\\<Esc>l%ibigg\\\<Esc>l%"
-    elseif s:c == '{' || c == '[' || c == '(' || c == '}' || c == ']' || c == ')'
+    elseif s:c == '{' || s:c == '[' || s:c == '(' || s:c == '}' || s:c == ']' || s:c == ')'
 	exe "normal i\\bigg\<Esc>l%i\\bigg\<Esc>l%"
     endif
 endfunction
@@ -697,7 +698,7 @@ function! s:ChangeLeftRightBigg()
     elseif s:c == '}'
 	exe "normal 6hcwbigg\<Esc>2l%5hcwbigg\<Esc>2l%"
     endif
-    elseif s:c == '{' || c == '[' || c == '('
+    elseif s:c == '{' || s:c == '[' || s:c == '('
 	exe "normal 4hcwbigg\<Esc>l%5hcwbigg\<Esc>l%"
     elseif s:c == '}' || s:c == ']' || s:c == ')'
 	exe "normal 5hcwbigg\<Esc>l%4hcwbigg\<Esc>l%"
@@ -748,6 +749,7 @@ endfunction
 " Saul's menu items
 nnoremenu 40.401 Brackets.delete\ brackets\ \ \ Ctrl+Del,Ctrl+BS,Tab-x :call <SID>DeleteBrackets()<CR>
 inoremenu 40.402 Brackets.delete\ brackets\ \ \ Ctrl+Del,Ctrl+BS,Tab-x <Left><C-O>:call <SID>DeleteBrackets()<CR> nnoremenu 40.403 Brackets.change\ to\ () :call <SID>ChangeRound()<CR>
+nnoremenu 40.404 Brackets.change\ to\ () :call <SID>ChangeRound()<CR>
 inoremenu 40.404 Brackets.change\ to\ () <Esc>:call <SID>ChangeRound()<CR>a
 nnoremenu 40.405 Brackets.change\ to\ [] :call <SID>ChangeSquare()<CR>
 inoremenu 40.406 Brackets.change\ to\ [] <Esc>:call <SID>ChangeSquare()<CR>a
