@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	October 23, 2002
-" Version:  2.0001
+" Last Change:	October 28, 2002
+" Version:  2.0002
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 let b:AMSLatex = 0
@@ -14,7 +14,7 @@ let mapleader = "`"
 " (uncommented), which would indicate AMSlatex.  This is mainly for the 
 " function keys F1 - F5, which insert the most common environments, and 
 " C-F1 - C-F5, which change them.  search for "amslatex" for further 
-" information (line 337).
+" information (line 349).
 " Set b:DoubleDollars to 1 if you use $$...$$ instead of \[...\]
 " With b:DoubleDollars = 1, C-F1 - C-F5 will not work in nested environments.
 
@@ -26,7 +26,7 @@ let mapleader = "`"
 "
 " Please read the comments in the file for an explanation of all the features.
 " One of the main features is that the "mapleader" (set to "`" see above),
-" triggers a number of macros (see line 733).  For example, 
+" triggers a number of macros (see line 740).  For example, 
 " `a would result in \alpha.  There are many other features;  read the file.
 
 " Switch to the directory of the tex file.  Thanks to Fritz Mehner.
@@ -49,13 +49,13 @@ inoremap <buffer> <C-B> <Left>
 inoremap <buffer> <C-D> <Del>
 inoremap <buffer> <C-E> <End>
 inoremap <buffer> <C-F> <Right>
-inoremap <buffer> <C-K> <C-R>=EmacsKill()<CR>
+inoremap <buffer> <C-K> <C-R>=<SID>EmacsKill()<CR>
 inoremap <buffer> <C-L> <C-O>zz
 inoremap <buffer> <C-N> <Down>
 inoremap <buffer> <C-P> <Up>
 inoremap <buffer> <C-Y> <C-R>"
 
-function! EmacsKill()
+function! s:EmacsKill()
     if col(".") == strlen(getline(line(".")))+1
 	let @" = "\<CR>"
 	return "\<Del>"
@@ -163,19 +163,27 @@ map <buffer> <F4> :if strpart(getline(1),0,9) != "\\document"<CR>!cp ~/Storage/L
 "       dictionary
 " set dictionary+=(put filename and path here)
 
-" Boldface:  (2 alternative macros)
+" Boldface:  (3 alternative macros)
 " In the first, \mathbf{} appears.
 " In the second, you type the letter, and it capitalizes the letter
 " and surrounds it with \mathbf{}
+" In the third, type <M-b>, you're asked for a character to be capitalized.
 " inoremap <buffer> <M-b> \mathbf{}<Left>
 inoremap <buffer> <M-b> <Left>\mathbf{<Right>}<Esc>hvUla
 vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
+"function! s:mathbf()
+"    echo "Mathbf: "
+"    let c = nr2char(getchar())
+"    return "\\mathbf{".c."}\<Esc>hvUla"
+"endfunction
+"inoremap <buffer> <M-b> <C-R>=<SID>mathbf()<CR>
 
 " Cal:  (3 alternative macros:  see Boldface)
 " In the first, \mathcal{} appears.
 " In the second, you type the letter, and it capitalizes the letter
 " and surrounds it with \mathcal{}
-" The third one also inserts \cite{}, if the previous character is a blank
+" The third one also inserts \cite{}, if the previous character is a blank.
+" The fourth asks for a character, capitalizes it, in \mathcal{}
 " inoremap <buffer> <M-c> \mathcal{}<Left>
 " inoremap <buffer> <M-c> <Left>\mathcal{<Right>}<Esc>h~a
 inoremap <buffer> <M-c> <C-R>=<SID>MathCal()<CR>
@@ -187,6 +195,12 @@ function! s:MathCal()
     endif
 endfunction
 vnoremap <buffer> <M-b> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
+"function! s:mathcal()
+"    echo "Mathcal: "
+"    let c = nr2char(getchar())
+"    return "\\mathcal{".c."}\<Esc>hvUla"
+"endfunction
+"inoremap <buffer> <M-b> <C-R>=<SID>mathcal()<CR>
 
 "  This macro asks the user for the input to \mathbf{}
 "inoremap <buffer> <M-b> <C-R>=<SID>WithBrackets("mathbf")<CR>
@@ -350,12 +364,13 @@ inoremap <buffer> <M-'> "
 "
 " and C-F1 - C-F5, which are used to change environments, are similar.
 
+let b:searchmax = 100
 function! s:AmsLatex(var)
     let amslatex = a:var
     if amslatex == 0
 	let n = 1
 	let line = getline(n)
-	while line !~ '\\begin{document}' && amslatex == 0
+	while line !~ '\\begin{document}' && amslatex == 0 && n < b:searchmax
 	    if line =~ '^[^%]*\\usepackage{.*amsmath.*}'
 		let amslatex = 1
 	    endif
@@ -393,9 +408,9 @@ function! s:FFour(var)
 endfunction
 function! s:CFTwo(var)
     if a:var == 0
-	call <SID>Change('[', 0, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)
+	call <SID>Change('[', 0, '&\|\\lefteqn{\|\\nonumber\|\\\\', 0)
     else
-	call <SID>Change('equation*', 0, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)
+	call <SID>Change('equation*', 0, '&\|\\lefteqn{\|\\nonumber\|\\\\', 0)
     end
 endfunction
 function! s:CFThree(var)
@@ -1043,6 +1058,7 @@ inoremap <buffer> ;i \int_{\mathbf{R}^d}
 inoremap <buffer> ;I \int_{0}^{\infty}
 inoremap <buffer> ;p P\left(\right)<Esc>F\i
 inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
+inoremap <buffer> ;2 <CR>\newline<CR>\noindent<CR>p, $\ell$)  <Esc>0a
 inoremap <buffer> ;s S_t^{\alpha}
 inoremap <buffer> ;^ ^{(n)}
 inoremap <buffer> ;d \diamond
