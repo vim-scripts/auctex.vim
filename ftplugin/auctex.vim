@@ -1,18 +1,18 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	March 18, 2004
-" Version:  2.0007
+" Last Change:	July 30, 2004
+" Version:  2.0008
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 
+" "========================================================================="
 " Explanation and Customization   {{{
 
 let b:AMSLatex = 0
 let b:DoubleDollars = 0
 " prefix for the "Greek letter" macros (For personal macros, it is ';')
 let mapleader = '`'
-let my_mapleader = ';'
 
 " Set b:AMSLatex to 1 if you are using AMSlatex.  Otherwise, the program will 
 " attempt to automatically detect the line \usepackage{...amsmath...} 
@@ -46,9 +46,11 @@ let b:template_4 = '~/Storage/Latex/exam.tex'
 
 " Vim commands to run latex and the dvi viewer.
 " Must be of the form "! ... % ..."
-"let b:latex_command = "! xterm -bg ivory -fn 7x14 -e latex % &"
-let b:latex_command = "! xterm -bg ivory -fn 7x14 -e latex \\\\nonstopmode \\\\input\\{%\\}; cat %<.log"
+" The following command may make xdvi automatically update.
+"let b:latex_command = "! xterm -bg ivory -fn 7x14 -e latex \\\\nonstopmode \\\\input\\{%\\}; cat %<.log"
+let b:latex_command = "!latex \\\\nonstopmode \\\\input\\{%\\}"
 let b:dvi_viewer_command = "! xdvi -expert -s 6 -margins 2cm -geometry 750x950 %< &"
+"let b:dvi_viewer_command = "! kdvi %< &"
 
 " Switch to the directory of the tex file.  Thanks to Fritz Mehner.
 " This is useful for starting xdvi, or going to the next tex error.
@@ -69,7 +71,10 @@ let b:windows = 0
 " In a math environment, the tab key moves between {...} braces, or to the end
 " of the line or the end of the environment.  Otherwise, it does word
 " completion.  But if the previous character is a blank, or if you are at the
-" end of the line, you get a tab.
+" end of the line, you get a tab.  If the previous characters are \ref{
+" then a list of \label{...} completions are displayed.  Choose one by
+" clicking on it, pressing Enter, or pressing K.  q quits the display.
+" (Thanks to Vim-Latex, http://vim-latex.sourceforge.net).
 
 inoremap <Tab> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
 inoremap <M-Space> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
@@ -79,8 +84,8 @@ function! s:TexInsertTabWrapper(direction)
     " Check to see if you're in a math environment.  Doesn't work for $$...$$.
     let line = getline('.')
     let len = strlen(line)
-    let col = col('.') - 1
-    let ending = strpart(line, col, len)
+    let column = col('.') - 1
+    let ending = strpart(line, column, len)
     let n = 0
 
     let dollar = 0
@@ -100,7 +105,80 @@ function! s:TexInsertTabWrapper(direction)
 	let math = 1
     endif
 
-    if dollar == 1   " If you're in a $..$ environment
+    " Check to see if you're between brackets in \ref{} or \cite{}.
+    " Inspired by Vim-Latex: http://vim-latex.sourceforge.net
+    " Typing q returns you to editing
+    " Typing <CR> or Left-clicking takes the data into \ref{} or \cite{}.
+    " Within \cite{}, you can enter a regular expression followed by <Tab>,
+    " Only the citations with matching authors are shown.
+    " \cite{c.*mo<Tab>} will show articles by Mueller and Moolinar, for example.
+    " Once the citation is shown, you type <CR> anywhere within the citation.
+    " The bibtex files listed in \bibliography{} are the ones shown.
+    if strpart(line,column-5,5) == '\ref{'
+	let tmp = tempname()
+	vertical 15split
+	execute "write! ".tmp
+	execute "edit ".tmp
+	g!/\\label{/delete
+	%s/.*\\label{//e
+	%s/}.*//e
+	noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion()<CR>a
+	noremap <buffer> <CR> :call <SID>RefInsertion()<CR>a
+	noremap <buffer> q :bwipeout!<CR>i
+	return "\<Esc>"
+    elseif match(strpart(line,0,column),'\\cite{[^}]*$') != -1
+	let m = matchstr(strpart(line,0,column),'[^{]*$')
+	let tmp = tempname()
+        execute "write! ".tmp
+        execute "split ".tmp
+	let l = search('\\bibliography')
+	bwipeout!
+	if l == 0
+	    return ''
+	else
+	    let s = getline(l)
+	    let beginning = matchend(s, '\\bibliography{')
+	    let ending = matchend(s, '}', beginning)
+	    let f = strpart(s, beginning, ending-beginning-1)
+	    let tmp = tempname()
+	    execute "below split ".tmp
+	    let file_exists = 0
+
+	    while f != ''
+	        let comma = match(f, ',[^,]*$')
+		if comma == -1
+    	            let file = f.'.bib'
+	            if filereadable(file)
+		        let file_exists = 1
+		        execute "0r ".file
+		    endif
+		    let f = ''
+	        else
+		    let file = strpart(f, comma+1)
+		    let file = file.'.bib'
+	            if filereadable(file)
+		        let file_exists = 1
+		        execute "0r ".file
+		    endif
+		    let f = strpart(f, 0, comma)
+		endif
+	    endwhile
+
+	    if file_exists == 1
+		if strlen(m) != 0
+	            %g/author\c/call <SID>BibPrune(m)
+	    	endif
+		noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion()<CR>a
+		noremap <buffer> <CR> :call <SID>CiteInsertion()<CR>a
+		noremap \<buffer> q :bwipeout!<CR>i
+		return "\<Esc>"
+	    else
+		bwipeout!
+		return ''
+	    endif
+
+	endif
+    elseif dollar == 1   " If you're in a $..$ environment
         if ending[0] =~ ')\|]\||\|\}'
 	    return "\<Right>"
 	elseif ending =~ '{'
@@ -122,14 +200,16 @@ function! s:TexInsertTabWrapper(direction)
 	    else
 		return "\<Esc>f}a"
 	    endif
-	elseif col == len    "You are at the end of the line.
+	elseif column == len    "You are at the end of the line.
 	    return "\<Esc>/\\\\end\\|\\\\]\<CR>$o"
 	else
 	    return "\<C-O>$"
 	endif
     else   " If you're not in a math environment.
-	" Thanks to Benoit Cerrina
-	if !col || line[col - 1] !~ '\k' 
+	" Thanks to Benoit Cerrina (modified)
+	if ending[0] == ')'  " Go past right parentheses.
+	    return "\<Right>"
+	elseif !column || line[column - 1] !~ '\k' 
 	    return "\<Tab>" 
 	elseif a:direction == 'backward'
 	    return "\<C-P>" 
@@ -139,6 +219,60 @@ function! s:TexInsertTabWrapper(direction)
 
     endif
 endfunction 
+
+function! s:RefInsertion()
+    normal 0y$
+    bwipeout!
+    let thisline = getline('.')
+    let thiscol  = col('.')
+    if thisline[thiscol-1] == '{'
+	normal p
+    else
+	normal P
+	if thisline[thiscol-1] == '}'
+	    normal l
+	    if thisline[thiscol] == ')'
+		normal l
+	    endif
+	endif
+    endif
+endfunction
+
+function! s:CiteInsertion()
+    +
+    if search('@','b') != 0
+        normal f{lyt,
+        bwipeout!
+        let thisline = getline('.')
+        let thiscol  = col('.')
+        if thisline[thiscol-1] == '{'
+	    normal p
+        else
+	    if thisline[thiscol-2] == '{'
+	         normal P
+	    else
+	         normal T{"_dt}P
+	    endif
+	    normal l
+        endif
+    else
+        bwipeout!
+    endif
+endfunction
+
+function! s:BibPrune(m)
+    if getline(line('.')) !~? a:m
+        ?@
+        let lfirst = line('.')
+        /@
+        let lsecond = line('.')
+        if lfirst < lsecond
+	    exe lfirst.','.(lsecond-1).'delete'
+        else
+	    exe lfirst.',$delete'
+        endif
+    endif
+endfunction
 
 " }}}
 " "========================================================================="
@@ -167,21 +301,28 @@ noremap <buffer> K :call <SID>RunLatex()<CR><Esc>
 noremap <buffer> <C-K> :call <SID>NextTexError()<CR>
 noremap <buffer> <S-Tab> :call <SID>NextTexError()<CR>
 noremap <buffer> <C-Tab> :call <SID>RunLatex()<CR><Esc>
-inoremap <buffer> <C-Tab> <Esc>:call <SID>RunLatex()<CR><Esc>
+inoremap <buffer> <C-Tab> <C-O>:call <SID>RunLatex()<CR><Esc>
 
 noremap <buffer> \lr :call <SID>CheckReferences('Reference', 'ref')<CR><Space>
 noremap <buffer> \lc :call <SID>CheckReferences('Citation', 'cite')<CR><Space>
 noremap <buffer> \lg :call <SID>LookAtLogFile()<CR>gg/LaTeX Warning\\|^!<CR>
 
 " Run the Latex viewer;  change these bindings if you like.
-noremap <buffer> <M-Tab> :call <SID>Xdvi()<CR><Space>
-inoremap <buffer> <M-Tab> <Esc>:call <SID>Xdvi()<CR><Space>
+noremap <buffer> <S-Esc> :call <SID>Xdvi()<CR><Space>
+inoremap <buffer> <S-Esc> <Esc>:call <SID>Xdvi()<CR><Space>
 
 " Run Ispell on either the buffer, or the visually selected word.
-noremap <buffer> <S-Insert> :w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
-inoremap <buffer> <S-Insert> <Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
-"vnoremap <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:silent !rm ispell.tmp*<CR>pkdd
-vnoremap <buffer> <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
+noremap <S-Insert> :w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR>:redraw<CR>:echo "No (more) spelling errors."<CR>
+inoremap <S-Insert> <Esc>:w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR>:redraw<CR>:echo "No (more) spelling errors."<CR>
+vnoremap <S-Insert> <C-C>`<v`>s<Space><Esc>mq<C-W>s:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>:redraw<CR>:echo "No (more) spelling errors."<CR>
+
+" Run Ispell (Thanks the Charles Campbell)
+" The first set is for vim, the second set for gvim.
+"noremap <buffer> <S-Insert> :w<CR>:silent !ispell %<CR>:e %<CR><Space>
+"inoremap <buffer> <S-Insert> <Esc>:w<CR>:silent !ispell %<CR>:e %<CR><Space>
+"vnoremap <buffer> <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:silent !rm ispell.tmp*<CR>pkdd
+"vnoremap <buffer> <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
+
 " Find Latex Errors
 " To find the tex error, first run Latex (see the 2 previous maps).
 " If there is an error, press "x" or "r" to stop the Tex processing.
@@ -307,14 +448,6 @@ function! s:GetLineFromLogFile()
     exe strpart(line, 5, strlen(line)-5)
 endfunction
 
-" Run Ispell (Thanks the Charles Campbell)
-" The first set is for vim, the second set for gvim.
-
-"noremap <buffer> <S-Insert> :w<CR>:silent !ispell %<CR>:e %<CR><Space>
-"inoremap <buffer> <S-Insert> <Esc>:w<CR>:silent !ispell %<CR>:e %<CR><Space>
-"vnoremap <buffer> <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:silent !rm ispell.tmp*<CR>pkdd
-"vnoremap <buffer> <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
-
 " }}}
 
 " }}}
@@ -347,18 +480,19 @@ endfunction
 " and C-F1 - C-F5, which are used to change environments, are similar.
 
 inoremap <buffer> <F1> \begin{equation}<CR>\label{}<CR><CR>\end{equation}<Esc>2k$i
-inoremap <buffer> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
+"inoremap <buffer> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <F2> <C-R>=<SID>FTwo(0)<CR>
+inoremap <buffer> <F3> <C-R>=<SID>FThree(0)<CR>
+inoremap <buffer> <F4> <C-R>=<SID>FFour(0)<CR>
 
 noremap <buffer> <C-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
 inoremap <buffer> <C-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
-noremap <buffer> <C-F2> :silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <C-F2> <Esc>:silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-noremap <buffer> <C-F3> :silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-inoremap <buffer> <C-F3> <Esc>:silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-noremap <buffer> <C-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <C-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer> <C-F2> :silent call <SID>CFTwo(0)<CR>
+inoremap <buffer> <C-F2> <Esc>:silent call <SID>CFTwo(0)<CR>
+noremap <buffer> <C-F3> :silent call <SID>CFThree(0)<CR>i
+inoremap <buffer> <C-F3> <Esc>:silent call <SID>CFThree(0)<CR>i
+noremap <buffer> <C-F4> :silent call <SID>CFFour(0)<CR>
+inoremap <buffer> <C-F4> <Esc>:silent call <SID>CFFour(0)<CR>
 
 inoremap <buffer> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
 inoremap <buffer> <F7> \noindent<CR>\textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
@@ -1214,14 +1348,14 @@ inoremap <buffer> <C-BS> <Left><C-O>:call <SID>DeleteBrackets()<CR>
 
 " Delete matching brackets.
 function! s:DeleteBrackets()
-    let b = getline('.')[col('.') - 2]
-    let c = getline('.')[col('.') - 1]
-    if b == '\' && c =~ '{\|}'
+    let bb = getline('.')[col('.') - 2]
+    let cc = getline('.')[col('.') - 1]
+    if bb == '\' && cc =~ '{\|}'
 	normal! X%X%
     endif
-    if c =~ '{\|\[\|('
+    if cc =~ '{\|\[\|('
 	normal! %x``x
-    elseif c =~ '}\|\]\|)'
+    elseif cc =~ '}\|\]\|)'
 	normal! %%x``x``
     endif
 endfunction
@@ -1385,16 +1519,10 @@ iab <buffer> \v \vfill
 " "========================================================================="
 " Personal or Temporary bindings.   {{{
 
-inoremap <buffer> ;; ;<Space><Space>
+"inoremap <buffer> ;; ;<Space><Space>
 
-"inoremap <buffer> ;p p_0
-"inoremap <buffer> ;<CR> <CR>\bigskip<CR>\noindent<CR>\textbf{}<Left>
-"inoremap <buffer> ;e E\left[\right]<Esc>F\i
-"inoremap <buffer> ;i \int_{\mathbf{R}^d}
-"inoremap <buffer> ;I \int_{0}^{\infty}
-"inoremap <buffer> ;p P\left(\right)<Esc>F\i
-"inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
-"inoremap <buffer> ;s S_t^{\alpha}
+"inoremap <buffer> ;I \int_{\mathbf{R}^d}
+"inoremap <buffer> ;i \int_{0}^{\infty}
 
 " }}}
 " "========================================================================="
