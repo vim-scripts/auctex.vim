@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	July 25, 2002
-" Version:  1.6
+" Last Change:	September 3, 2002
+" Version:  1.6.1
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 " Auctex-style macros for Latex typing.
@@ -123,15 +123,15 @@ endfunction
 " Run Ispell (Thanks the Charles Campbell)
 " The first set is for vim, the second set for gvim.
 
-"noremap <buffer> <S-Insert> :w<CR>:!ispell %<CR><Space>:e %<CR><Space>
-"inoremap <buffer> <S-Insert> <Esc>:w<CR>:!ispell %<CR><Space>:e %<CR><Space>
-"vnoremap <buffer> <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:!ispell %<CR><CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:!rm ispell.tmp*<CR><Esc>pkdd
-"vnoremap <buffer> <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:!ispell %<CR><CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
+"noremap <buffer> <S-Insert> :w<CR>:silent !ispell %<CR>:e %<CR><Space>
+"inoremap <buffer> <S-Insert> <Esc>:w<CR>:silent !ispell %<CR>:e %<CR><Space>
+"vnoremap <buffer> <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:silent !rm ispell.tmp*<CR>pkdd
+"vnoremap <buffer> <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
 
-noremap <S-Insert> :w<CR>:! xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR><Space>
-inoremap <S-Insert> <Esc>:w<CR>:! xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR><Space>
-"vnoremap <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:! xterm -bg ivory -fn 10x20 -e ispell %<CR><CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:!rm ispell.tmp*<CR><Esc>pkdd
-vnoremap <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:! xterm -bg ivory -fn 10x20 -e ispell %<CR><CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
+noremap <S-Insert> :w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
+inoremap <S-Insert> <Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
+"vnoremap <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:silent !rm ispell.tmp*<CR>pkdd
+vnoremap <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
 
 " In normal mode, F1 inserts a latex template.
 " F2 inserts a minimal latex template
@@ -180,7 +180,7 @@ inoremap <buffer> <M-f> <Esc>f{a
 " Alt-h inserts \widehat{}
 inoremap <buffer> <M-h> \widehat{}<Left>
 
-" Alt-i inserts \item
+" Alt-i inserts \item 
 inoremap <buffer> <M-i> \item
 
 " Alt-m inserts \mbox{}
@@ -589,7 +589,7 @@ function! s:CompleteSlash(left,right)
     endif
 endfunction
 
-" Double ampersands, unless you are in an array environment
+" Double ampersands, unless you are in an array or tabular environment
 function! s:DoubleAmpersands()
     let stop = 0
     let currentline = line(".")
@@ -600,7 +600,7 @@ function! s:DoubleAmpersands()
 	    let stop = 1
 	endif
     endwhile
-    if thisline =~ '\\begin{array}'
+    if thisline =~ '\\begin{\(array\|tabular\)}'
 	return "&"
     elseif strpart(getline(line(".")),col(".")-2,2) == "&&"
 	return "\<Del>"
@@ -908,14 +908,14 @@ nnoremenu 40.412 Brackets.change\ \\left,\\right,\\big,\ etc\ to\ (default\ \\no
 inoremenu 40.413 Brackets.change\ \\left,\\right\,\\big,\ etc\ to\ (default\ \\nothing) <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
 
 " Menus for running Latex, etc.
-nnoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab :w<CR>:! xterm -bg ivory -fn 7x14 -e latex % &<CR><Space>
-inoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab <Esc>:w<CR>:! xterm -bg ivory -fn 7x14 -e latex % &<CR><Space>
+nnoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab :w<CR>:silent ! xterm -bg ivory -fn 7x14 -e latex % &<CR>
+inoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab <Esc>:w<CR>:silent ! xterm -bg ivory -fn 7x14 -e latex % &<CR>
 nnoremenu 50.402 Latex.next\ error\ \ \ Shift-Tab :call <SID>NextTexError()<CR><Space>
 inoremenu 50.402 Latex.next\ error\ \ \ Shift-Tab <Esc>:call <SID>NextTexError()<CR><Space>
 nnoremenu 50.403 Latex.run\ xdvi\ \ \ \ \ Alt-Tab :call <SID>Xdvi()<CR><Space>
 inoremenu 50.403 Latex.run\ xdvi\ \ \ \ \ Alt-Tab <Esc>:call <SID>Xdvi()<CR><Space>
-nnoremenu 50.404 Latex.run\ ispell\ \ \ Shift-Ins :w<CR>:! xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR><Space>
-inoremenu 50.404 Latex.run\ ispell\ \ \ Shift-Ins <Esc>:w<CR>:! xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR><Space>
+nnoremenu 50.404 Latex.run\ ispell\ \ \ Shift-Ins :w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
+inoremenu 50.404 Latex.run\ ispell\ \ \ Shift-Ins <Esc>:w<CR>:silent ! xterm -bg ivory -fn 10x20 -e ispell %<CR>:e %<CR><Space>
 "nnoremenu 50.405 Latex.run\ engspchk :so .Vim/engspchk.vim<CR>
 "inoremenu 50.405 Latex.run\ engspchk <C-O>:so .Vim/engspchk.vim<CR>
 
@@ -932,5 +932,12 @@ iab <buffer> \v \vfill
 
 " Personal or Temporary bindings.
 inoremap <buffer> ;; ;
+inoremap <buffer> ;<CR> <CR>\bigskip<CR>\noindent<CR>\textbf{}<Left>
+inoremap <buffer> ;e E\left[\right]<Esc>F\i
 inoremap <buffer> ;i \int_{\mathbf{R}^d}
 inoremap <buffer> ;I \int_{0}^{\infty}
+inoremap <buffer> ;p P\left(\right)<Esc>F\i
+inoremap <buffer> ;1 \newline<CR><CR>\noindent<CR>\textbf{}<Left>
+inoremap <buffer> ;s S_t^{\alpha}
+inoremap <buffer> ;^ ^{(n)}
+inoremap <buffer> ;d \diamond
