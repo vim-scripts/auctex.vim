@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	July 30, 2004
-" Version:  2.0008
+" Last Change:	September 7, 2007
+" Version:  2.0009
 " Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
 
 
@@ -41,13 +41,14 @@ let b:template_1 = '~/.Vim/latex'
 let b:template_2 = '~/.Vim/min-latex'
 " The next template is for a letter, which has "\opening{}"
 let b:template_3 = '~/.Vim/letter'
-" The next template is for a miscelaneous document.
+" The next template is for a miscellaneous document.
 let b:template_4 = '~/Storage/Latex/exam.tex'
 
 " Vim commands to run latex and the dvi viewer.
 " Must be of the form "! ... % ..."
 " The following command may make xdvi automatically update.
 "let b:latex_command = "! xterm -bg ivory -fn 7x14 -e latex \\\\nonstopmode \\\\input\\{%\\}; cat %<.log"
+"let b:latex_command = "! xterm -e latex \\\\nonstopmode \\\\input\\{%\\}"
 let b:latex_command = "!latex \\\\nonstopmode \\\\input\\{%\\}"
 let b:dvi_viewer_command = "! xdvi -expert -s 6 -margins 2cm -geometry 750x950 %< &"
 "let b:dvi_viewer_command = "! kdvi %< &"
@@ -64,6 +65,12 @@ let b:tw = 79
 " If you are using Windows, modify b:latex_command above, and set 
 " b:windows below equal to 1
 let b:windows = 0
+
+" }}}
+" "========================================================================="
+" Mapping for Xdvi Search   {{{
+
+noremap <buffer> <C-LeftMouse> :execute "!xdvi -name -xdvi -sourceposition ".line(".").expand("%")." ".expand("%:r").".dvi"<CR><CR>
 
 " }}}
 " "========================================================================="
@@ -179,7 +186,7 @@ function! s:TexInsertTabWrapper(direction)
 
 	endif
     elseif dollar == 1   " If you're in a $..$ environment
-        if ending[0] =~ ')\|]\||\|\}'
+        if ending[0] =~ ')\|]\||\|}'
 	    return "\<Right>"
 	elseif ending =~ '{'
 	    return "\<Esc>f{a"
@@ -207,7 +214,7 @@ function! s:TexInsertTabWrapper(direction)
 	endif
     else   " If you're not in a math environment.
 	" Thanks to Benoit Cerrina (modified)
-	if ending[0] == ')'  " Go past right parentheses.
+	if ending[0] =~ ')\|}'  " Go past right parentheses.
 	    return "\<Right>"
 	elseif !column || line[column - 1] !~ '\k' 
 	    return "\<Tab>" 
@@ -458,7 +465,7 @@ endfunction
 
 " \begin{...}...\end{...}
 " F1 - F5 inserts various environments (insert mode).
-" Ctrl-F1 through Ctrl-F5 replaces the current environment
+" Shift-F1 through Shift-F5 replaces the current environment
 "     with \begin-\end{equation} through \begin-\end{}.
 
 " The next function searches until \begin{document}
@@ -477,25 +484,25 @@ endfunction
 "  F4          eqnarray*                align*
 "  F5          asks for environment     asks for environment
 "
-" and C-F1 - C-F5, which are used to change environments, are similar.
+" and S-F1 - S-F5, which are used to change environments, are similar.
 
 inoremap <buffer> <F1> \begin{equation}<CR>\label{}<CR><CR>\end{equation}<Esc>2k$i
-"inoremap <buffer> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <F2> <C-R>=<SID>FTwo(0)<CR>
-inoremap <buffer> <F3> <C-R>=<SID>FThree(0)<CR>
-inoremap <buffer> <F4> <C-R>=<SID>FFour(0)<CR>
+inoremap <buffer> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+"inoremap <buffer> <F2> <C-R>=<SID>FTwo(0)<CR>
+inoremap <buffer> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
-noremap <buffer> <C-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
-inoremap <buffer> <C-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
-noremap <buffer> <C-F2> :silent call <SID>CFTwo(0)<CR>
-inoremap <buffer> <C-F2> <Esc>:silent call <SID>CFTwo(0)<CR>
-noremap <buffer> <C-F3> :silent call <SID>CFThree(0)<CR>i
-inoremap <buffer> <C-F3> <Esc>:silent call <SID>CFThree(0)<CR>i
-noremap <buffer> <C-F4> :silent call <SID>CFFour(0)<CR>
-inoremap <buffer> <C-F4> <Esc>:silent call <SID>CFFour(0)<CR>
+noremap <buffer> <S-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
+inoremap <buffer> <S-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
+noremap <buffer> <S-F2> :silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <S-F2> <Esc>:silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer> <S-F3> :silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+inoremap <buffer> <S-F3> <Esc>:silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+noremap <buffer> <S-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> <S-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
 inoremap <buffer> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
-inoremap <buffer> <F7> \noindent<CR>\textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
+inoremap <buffer> <F7> \textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
 
 " The next idea came from a contributed NEdit macro.
 " typing the name of the environment followed by <F5> results in 
@@ -506,8 +513,8 @@ inoremap <buffer> <F5> <Esc>:call <SID>DoEnvironment()<CR>
 
 " Due to Ralf Arens <ralf.arens@gmx.net>
 "inoremap <buffer> <F5> <C-O>:call <SID>PutEnvironment(input('Environment? '))<CR>
-inoremap <buffer> <C-F5> <C-O>:call <SID>ChangeEnvironment(input('Environment? '))<CR>
-noremap <buffer> <C-F5> :call <SID>ChangeEnvironment(input('Environment? '))<CR>
+inoremap <buffer> <S-F5> <C-O>:call <SID>ChangeEnvironment(input('Environment? '))<CR>
+noremap <buffer> <S-F5> :call <SID>ChangeEnvironment(input('Environment? '))<CR>
 
 " }}}
 
@@ -636,8 +643,8 @@ function! s:DoEnvironment()
 endfunction
 
 " The following function was improved by Peppe Guldberg and Torsten Wolf.
-function! s:SetEnvironment(env)
-  let indent = strpart(a:env, 0, match(a:env, '\S'))
+function! s:SetEnvironment(env) 
+  let indent = strpart(a:env, 0, match(a:env, '\S')) 
   let env = strpart(a:env, strlen(indent))
   put! =indent . '\begin{' . env . '}'
   +put =indent . '\end{' . env . '}'
@@ -858,7 +865,7 @@ map <buffer> gw :call <SID>TeX_par()<CR>
 
 " }}}
 " "========================================================================="
-" Alt and Insert Macros   {{{
+" Alt and Insert key Macros   {{{
 
 " We use Alt-v, since Alt-b interferes with the Buffer menu.
 " Boldface:  (3 alternative macros)
@@ -919,8 +926,8 @@ inoremap <buffer> <M-h> \widehat{}<Left>
 inoremap <buffer> <Insert>h \widehat{}<Left>
 
 " Alt-i or Insert-i inserts \item 
-inoremap <buffer> <M-i> \item
-inoremap <buffer> <Insert>i \item
+inoremap <buffer> <M-i> \item 
+inoremap <buffer> <Insert>i \item 
 
 " Alt-m or Insert-m inserts \mbox{}
 inoremap <buffer> <M-m> \mbox{}<Left>
@@ -1077,25 +1084,46 @@ inoremap <buffer> " <C-R>=<SID>TexQuotes()<CR>
 
 " }}}
 " "========================================================================="
-" Typing ... results in \dots   {{{
+" Typing .. results in \ldots or \cdots   {{{
 
-"function! s:Dots()
-"    let left = strpart(getline('.'),col('.')-3,2)
+" Use this if you want . to result in a just a period, with no spaces.
+"function! s:Dots(var)
+"    let column = col('.')
+"    let currentline = getline('.')
+"    let left = strpart(currentline ,column-3,2)
+"    let before = currentline[column-4]
 "    if left == '..'
-"	return "\<BS>\<BS>\dots"
+"    	if a:var == 0
+"	    if before == ','
+"		return "\<BS>\<BS>\\ldots"
+"	    else
+"		return "\<BS>\<BS>\\cdots"
+"	    endif
+"        else
+"	    return "\<BS>\<BS>\\dots"
+"	endif
 "    else
 "       return '.'
 "    endif
 "endfunction
 " Use this if you want . to result in a period followed by 1 space.
-"function! s:Dots()
+"function! s:Dots(var)
 "    let column = col('.')
 "    let currentline = getline('.')
 "    let previous = currentline[column-2]
+"    let before = currentline[column-3]
 "    if strpart(currentline,column-3,2) == '. '
 "	return "\<BS>"
 "    elseif previous == '.'
-"	return "\<BS>\\dots"
+"    	if a:var == 0
+"	    if before == ','
+"		return "\<BS>\\ldots"
+"	    else
+"		return "\<BS>\\cdots"
+"	    endif
+"        else
+"	    return "\<BS>\\dots"
+"	endif
 "    elseif previous =~ '[\$A-Za-z]' && currentline !~ '@'
 "	return '. '
 "    else
@@ -1103,21 +1131,30 @@ inoremap <buffer> " <C-R>=<SID>TexQuotes()<CR>
 "    endif
 "endfunction
 " Use this if you want . to result in a period followed by 2 spaces.
-function! s:Dots()
+function! s:Dots(var)
     let column = col('.')
     let currentline = getline('.')
     let previous = currentline[column-2]
+    let before = currentline[column-3]
     if strpart(currentline,column-4,3) == '.  '
 	return "\<BS>\<BS>"
     elseif previous == '.'
-	return "\<BS>\\dots"
+    	if a:var == 0
+	    if before == ','
+		return "\<BS>\\ldots"
+	    else
+		return "\<BS>\\cdots"
+	    endif
+        else
+	    return "\<BS>\\dots"
+	endif
     elseif previous =~ '[\$A-Za-z]' && currentline !~ '@'
 	return '.  '
     else
 	return '.'
     endif
 endfunction
-inoremap <buffer> . <C-R>=<SID>Dots()<CR>
+inoremap <buffer> . <C-R>=<SID>Dots(<SID>AmsLatex(b:AMSLatex))<CR>
 inoremap <buffer> <M-.> .
 
 " }}}
@@ -1389,10 +1426,10 @@ function! s:StripSlash(string,default)
     endif
 endfunction
 
-" Put \bigg (or whatever the reader chooses) in front of the matched brackets.
+" Put \Big (or whatever the reader chooses) in front of the matched brackets.
 function! s:PutBigg()
-    let in = input("\\Big, \\bigg, or what? (default: bigg):  ")
-    let in = <SID>StripSlash(in,"\\bigg")
+    let in = input("\\Big, \\bigg, or what? (default: Big):  ")
+    let in = <SID>StripSlash(in,"\\Big")
     let b = getline('.')[col('.') - 2]
     let c = getline('.')[col('.') - 1]
     if b == '\'
@@ -1421,9 +1458,9 @@ endfunction
 function! s:ChangeCurly()
     let c = getline('.')[col('.') - 1]
     if c =~ '\[\|('
-	exe "normal! i\\\<Esc>l%i\\\<Esc>lr}``r{"
+	exe "normal! i\\{\<Esc>l%i\\\<Esc>lr}``xh"
     elseif c =~ '\]\|)'
-	exe "normal! %i\\\<Esc>l%i\\\<Esc>lr}``r{%"
+	exe "normal! %i\\{\<Esc>l%i\\\<Esc>lr}``xh%"
     endif
 endfunction
 
@@ -1432,11 +1469,11 @@ function! s:ChangeRound()
     let b = getline('.')[col('.') - 2]
     let c = getline('.')[col('.') - 1]
     if b == '\'
-    if c == '{'
-	normal! X%Xr)``r(
-    elseif c == '}'
-	normal! %X%Xr)``r(%
-    endif
+	if c == '{'
+	    normal! %Xr)``Xr(
+	elseif c == '}'
+	    normal! %%Xr)``Xr(``
+	endif
     elseif c == '['
 	normal! %r)``r(
     elseif c == ']'
@@ -1450,9 +1487,9 @@ function! s:ChangeSquare()
     let c = getline('.')[col('.') - 1]
     if b == '\'
 	if c == '{'
-	    normal! X%Xr]``r[
+	    normal! %Xr]``Xr[
 	elseif c == '}'
-	    normal! %X%Xr]``r[%
+	    normal! %%Xr]``Xr[``
 	endif
     elseif c == '('
 	normal! %r]``r[
@@ -1478,8 +1515,8 @@ nnoremenu 40.407 Brackets.change\ to\ \\{\\} :call <SID>ChangeCurly()<CR>
 inoremenu 40.408 Brackets.change\ to\ \\{\\} <Esc>:call <SID>ChangeCurly()<CR>a
 nnoremenu 40.409 Brackets.insert\ \\left,\\right :call <SID>PutLeftRight()<CR>
 inoremenu 40.410 Brackets.insert\ \\left,\\right <Esc>:call <SID>PutLeftRight()<CR>a
-nnoremenu 40.410 Brackets.insert\ (default\ \\bigg) :call <SID>PutBigg()<CR>
-inoremenu 40.411 Brackets.insert\ (default\ \\bigg) <Esc>:call <SID>PutBigg()<CR>a
+nnoremenu 40.410 Brackets.insert\ (default\ \\Big) :call <SID>PutBigg()<CR>
+inoremenu 40.411 Brackets.insert\ (default\ \\Big) <Esc>:call <SID>PutBigg()<CR>a
 nnoremenu 40.412 Brackets.change\ \\left,\\right,\\big,\ etc\ to\ (default\ \\nothing) :call <SID>ChangeLeftRightBigg()<CR>
 inoremenu 40.413 Brackets.change\ \\left,\\right\,\\big,\ etc\ to\ (default\ \\nothing) <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
 
@@ -1519,10 +1556,10 @@ iab <buffer> \v \vfill
 " "========================================================================="
 " Personal or Temporary bindings.   {{{
 
-"inoremap <buffer> ;; ;<Space><Space>
+inoremap <buffer> ;; ;<Space><Space>
 
+"inoremap <buffer> ;d \diamond
 "inoremap <buffer> ;I \int_{\mathbf{R}^d}
-"inoremap <buffer> ;i \int_{0}^{\infty}
 
 " }}}
 " "========================================================================="
