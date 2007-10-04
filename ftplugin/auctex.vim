@@ -1,10 +1,9 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	September 7, 2007
-" Version:  2.0009
-" Website:  http://www.math.rochester.edu/u/cmlr/vim/syntax/index.html
-
+" Last Change:	October 4, 2007
+" Version:  2.0010
+" Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
 " Explanation and Customization   {{{
@@ -186,7 +185,11 @@ function! s:TexInsertTabWrapper(direction)
 
 	endif
     elseif dollar == 1   " If you're in a $..$ environment
-        if ending[0] =~ ')\|]\||\|}'
+	if ending =~ '^}{'
+	    return "\<Right>\<Right>"
+	elseif ending =~ '^}^{'
+	    return "\<Right>\<Right>\<Right>"
+	elseif ending[0] =~ ')\|]\||\|}'
 	    return "\<Right>"
 	elseif ending =~ '{'
 	    return "\<Esc>f{a"
