@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	October 4, 2007
-" Version:  2.0010
+" Last Change:	October 15, 2007
+" Version:  2.0011
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -189,7 +189,7 @@ function! s:TexInsertTabWrapper(direction)
 	    return "\<Right>\<Right>"
 	elseif ending =~ '^}^{'
 	    return "\<Right>\<Right>\<Right>"
-	elseif ending[0] =~ ')\|]\||\|}'
+	elseif ending[0] =~ '])\|]\||\|}'
 	    return "\<Right>"
 	elseif ending =~ '{'
 	    return "\<Esc>f{a"
@@ -200,7 +200,7 @@ function! s:TexInsertTabWrapper(direction)
     elseif math == 1    " If you're in a regular math environment.
 	if ending =~ '^\s*&'
 	    return "\<Esc>f&a"
-        elseif ending[0] =~ ')\|]\||'
+        elseif ending[0] =~ '])\|]\||'
 	    return "\<Right>"
 	elseif ending =~ '{'
 	    return "\<Esc>f{a"
