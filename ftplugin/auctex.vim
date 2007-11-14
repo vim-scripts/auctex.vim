@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	October 15, 2007
-" Version:  2.0011
+" Last Change:	November 14, 2007
+" Version:  2.1
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -112,7 +112,7 @@ function! s:TexInsertTabWrapper(direction)
     endif
 
     " Check to see if you're between brackets in \ref{} or \cite{}.
-    " Inspired by Vim-Latex: http://vim-latex.sourceforge.net
+    " Inspired by RefTex.
     " Typing q returns you to editing
     " Typing <CR> or Left-clicking takes the data into \ref{} or \cite{}.
     " Within \cite{}, you can enter a regular expression followed by <Tab>,
@@ -137,52 +137,65 @@ function! s:TexInsertTabWrapper(direction)
 	let tmp = tempname()
         execute "write! ".tmp
         execute "split ".tmp
-	let l = search('\\bibliography')
-	bwipeout!
-	if l == 0
-	    return ''
-	else
-	    let s = getline(l)
-	    let beginning = matchend(s, '\\bibliography{')
-	    let ending = matchend(s, '}', beginning)
-	    let f = strpart(s, beginning, ending-beginning-1)
-	    let tmp = tempname()
+
+	let l = search('\\begin{thebibliography}')
+	if l != 0
+	    bwipeout!
 	    execute "below split ".tmp
-	    let file_exists = 0
-
-	    while f != ''
-	        let comma = match(f, ',[^,]*$')
-		if comma == -1
-    	            let file = f.'.bib'
-	            if filereadable(file)
-		        let file_exists = 1
-		        execute "0r ".file
-		    endif
-		    let f = ''
-	        else
-		    let file = strpart(f, comma+1)
-		    let file = file.'.bib'
-	            if filereadable(file)
-		        let file_exists = 1
-		        execute "0r ".file
-		    endif
-		    let f = strpart(f, 0, comma)
-		endif
-	    endwhile
-
-	    if file_exists == 1
-		if strlen(m) != 0
-	            %g/author\c/call <SID>BibPrune(m)
-	    	endif
-		noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion()<CR>a
-		noremap <buffer> <CR> :call <SID>CiteInsertion()<CR>a
-		noremap \<buffer> q :bwipeout!<CR>i
-		return "\<Esc>"
-	    else
-		bwipeout!
+	    execute search('\\begin{thebibliography}')
+	    normal kdgg
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>BBLCiteInsertion('\\bibitem')<CR>a
+	    noremap <buffer> <CR> :call <SID>CiteInsertion('\\bibitem')<CR>a
+	    noremap \<buffer> q :bwipeout!<CR>i
+	    return "\<Esc>"
+	else
+	    let l = search('\\bibliography')
+	    bwipeout!
+	    if l == 0
 		return ''
-	    endif
+	    else
+		let s = getline(l)
+		let beginning = matchend(s, '\\bibliography{')
+		let ending = matchend(s, '}', beginning)
+		let f = strpart(s, beginning, ending-beginning-1)
+		let tmp = tempname()
+		execute "below split ".tmp
+		let file_exists = 0
 
+		while f != ''
+		    let comma = match(f, ',[^,]*$')
+		    if comma == -1
+			let file = f.'.bib'
+			if filereadable(file)
+			    let file_exists = 1
+			    execute "0r ".file
+			endif
+			let f = ''
+		    else
+			let file = strpart(f, comma+1)
+			let file = file.'.bib'
+			if filereadable(file)
+			    let file_exists = 1
+			    execute "0r ".file
+			endif
+			let f = strpart(f, 0, comma)
+		    endif
+		endwhile
+
+		if file_exists == 1
+		    if strlen(m) != 0
+			%g/author\c/call <SID>BibPrune(m)
+		    endif
+		    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion("@")<CR>a
+		    noremap <buffer> <CR> :call <SID>CiteInsertion("@")<CR>a
+		    noremap \<buffer> q :bwipeout!<CR>i
+		    return "\<Esc>"
+		else
+		    bwipeout!
+		    return ''
+		endif
+
+	    endif
 	endif
     elseif dollar == 1   " If you're in a $..$ environment
 	if ending =~ '^}{'
@@ -230,6 +243,7 @@ function! s:TexInsertTabWrapper(direction)
     endif
 endfunction 
 
+" Inspired by RefTex
 function! s:RefInsertion()
     normal 0y$
     bwipeout!
@@ -248,10 +262,17 @@ function! s:RefInsertion()
     endif
 endfunction
 
-function! s:CiteInsertion()
+" Inspired by RefTex
+" Get citations from the .bib file or from the bibitem entries.
+function! s:CiteInsertion(x)
     +
-    if search('@','b') != 0
-        normal f{lyt,
+    "if search('@','b') != 0
+    if search(a:x, 'b') != 0
+	if a:x == "@"
+	    normal f{lyt,
+	else
+	    normal f{lyt}
+	endif
         bwipeout!
         let thisline = getline('.')
         let thiscol  = col('.')
@@ -1431,7 +1452,7 @@ endfunction
 
 " Put \Big (or whatever the reader chooses) in front of the matched brackets.
 function! s:PutBigg()
-    let in = input("\\Big, \\bigg, or what? (default: Big):  ")
+    let in = input("\\big, \\bigg, or what? (default: \\Big):  \\")
     let in = <SID>StripSlash(in,"\\Big")
     let b = getline('.')[col('.') - 2]
     let c = getline('.')[col('.') - 1]
@@ -1444,7 +1465,7 @@ endfunction
 
 " Change \left..\right to \bigg, or whatever the user chooses.
 function! s:ChangeLeftRightBigg()
-    let in = input("\\Big, \\bigg, or what? (default: nothing):  ")
+    let in = input("\\Big, \\bigg, or what? (default: nothing):  \\")
     let in = <SID>StripSlash(in,'')
     let b = getline('.')[col('.') - 2]
     let c = getline('.')[col('.') - 1]
@@ -1520,8 +1541,8 @@ nnoremenu 40.409 Brackets.insert\ \\left,\\right :call <SID>PutLeftRight()<CR>
 inoremenu 40.410 Brackets.insert\ \\left,\\right <Esc>:call <SID>PutLeftRight()<CR>a
 nnoremenu 40.410 Brackets.insert\ (default\ \\Big) :call <SID>PutBigg()<CR>
 inoremenu 40.411 Brackets.insert\ (default\ \\Big) <Esc>:call <SID>PutBigg()<CR>a
-nnoremenu 40.412 Brackets.change\ \\left,\\right,\\big,\ etc\ to\ (default\ \\nothing) :call <SID>ChangeLeftRightBigg()<CR>
-inoremenu 40.413 Brackets.change\ \\left,\\right\,\\big,\ etc\ to\ (default\ \\nothing) <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
+nnoremenu 40.412 Brackets.change\ \\left,\\right,\\big,\ etc\ to\ (default\ nothing) :call <SID>ChangeLeftRightBigg()<CR>
+inoremenu 40.413 Brackets.change\ \\left,\\right\,\\big,\ etc\ to\ (default\ nothing) <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
 
 " Menus for running Latex, etc.
 nnoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab :w<CR>:silent ! xterm -bg ivory -fn 7x14 -e latex % &<CR>
@@ -1560,6 +1581,12 @@ iab <buffer> \v \vfill
 " Personal or Temporary bindings.   {{{
 
 inoremap <buffer> ;; ;<Space><Space>
+
+inoremap <buffer> ;p <CR><CR>\noindent<CR>\textbf{p, $\ell$)}  <Esc>0f)08la
+inoremap <buffer> ;e E\left[\right]<Esc>F\i
+"inoremap <buffer> ;e \epsilon
+"inoremap <buffer> ;o \oplus
+
 
 "inoremap <buffer> ;d \diamond
 "inoremap <buffer> ;I \int_{\mathbf{R}^d}
