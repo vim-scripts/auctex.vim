@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
-" Maintainer: Carl Mueller, cmlr@math.rochester.edu
-" Last Change:	November 14, 2007
-" Version:  2.1
+" Maintainer: Carl Mueller, cmlr at math rochester e d u
+" Last Change:	December 31, 2007
+" Version:  2.1.1
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -79,8 +79,10 @@ noremap <buffer> <C-LeftMouse> :execute "!xdvi -name -xdvi -sourceposition ".lin
 " completion.  But if the previous character is a blank, or if you are at the
 " end of the line, you get a tab.  If the previous characters are \ref{
 " then a list of \label{...} completions are displayed.  Choose one by
-" clicking on it, pressing Enter, or pressing K.  q quits the display.
-" (Thanks to Vim-Latex, http://vim-latex.sourceforge.net).
+" clicking on it and pressing Enter.  q quits the display.  Ditto for 
+" \cite{, except you get to choose from either the bibitem entries, if any,
+" or the bibtex file entries.
+" This was inspired by the emacs package Reftex.
 
 inoremap <Tab> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
 inoremap <M-Space> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
@@ -121,25 +123,43 @@ function! s:TexInsertTabWrapper(direction)
     " Once the citation is shown, you type <CR> anywhere within the citation.
     " The bibtex files listed in \bibliography{} are the ones shown.
     if strpart(line,column-5,5) == '\ref{'
-	let tmp = tempname()
-	vertical 15split
-	execute "write! ".tmp
-	execute "edit ".tmp
-	g!/\\label{/delete
-	%s/.*\\label{//e
-	%s/}.*//e
-	noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion()<CR>a
-	noremap <buffer> <CR> :call <SID>RefInsertion()<CR>a
-	noremap <buffer> q :bwipeout!<CR>i
-	return "\<Esc>"
+	let name = bufname(1)
+	let aux = strpart(name, 0, strlen(name)-3)."aux"
+	"if search('^\\usepackage\[active\]{srcltx}', 'bn')
+	"    split
+	"    return ''
+	if filereadable(aux)
+	    let tmp = tempname()
+	    execute "below split ".tmp
+	    execute "0read ".aux
+	    g!/^\\newlabel{/delete
+	    g/.*/normal 3f{lyt}0Pf}D0f\cf{       
+	    execute "write! ".tmp
+
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion("aux")<CR>a
+	    noremap <buffer> <CR> :call <SID>RefInsertion("aux")<CR>a
+	    noremap <buffer> q :bwipeout!<CR>i
+	    return "\<Esc>"
+	else
+	    let tmp = tempname()
+	    vertical 15split
+	    execute "write! ".tmp
+	    execute "edit ".tmp
+	    g!/\\label{/delete
+	    %s/.*\\label{//e
+	    %s/}.*//e
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion(0)<CR>a
+	    noremap <buffer> <CR> :call <SID>RefInsertion(0)<CR>a
+	    noremap <buffer> q :bwipeout!<CR>i
+	    return "\<Esc>"
+	endif
     elseif match(strpart(line,0,column),'\\cite{[^}]*$') != -1
 	let m = matchstr(strpart(line,0,column),'[^{]*$')
 	let tmp = tempname()
         execute "write! ".tmp
         execute "split ".tmp
 
-	let l = search('\\begin{thebibliography}')
-	if l != 0
+	if 0 != search('\\begin{thebibliography}')
 	    bwipeout!
 	    execute "below split ".tmp
 	    execute search('\\begin{thebibliography}')
@@ -241,10 +261,34 @@ function! s:TexInsertTabWrapper(direction)
 	endif 
 
     endif
+    nohlsearch
 endfunction 
 
 " Inspired by RefTex
-function! s:RefInsertion()
+function! s:RefInsertion(x)
+    if a:x == "aux"
+	normal 0Wy$
+    else
+	normal 0y$
+    endif
+    bwipeout!
+    let thisline = getline('.')
+    let thiscol  = col('.')
+    if thisline[thiscol-1] == '{'
+	normal p
+    else
+	normal P
+	if thisline[thiscol-1] == '}'
+	    normal l
+	    if thisline[thiscol] == ')'
+		normal l
+	    endif
+	endif
+    endif
+endfunction
+
+" Inspired by RefTex
+function! s:OldRefInsertion()
     normal 0y$
     bwipeout!
     let thisline = getline('.')
@@ -289,6 +333,7 @@ function! s:CiteInsertion(x)
     else
         bwipeout!
     endif
+    nohlsearch
 endfunction
 
 function! s:BibPrune(m)
@@ -419,6 +464,7 @@ function! s:NextTexError()
 	wincmd x
 	exe command
     endif
+    nohlsearch
 endfunction
 
 " Run xdvi
@@ -454,6 +500,7 @@ function! s:CheckReferences(name, ref)
 	exe "normal! /\\\\" . a:ref . "{" . reference . "}\<CR>"
 	exe "normal! /" . reference . "\<CR>"
     endif
+    nohlsearch
 endfunction
 
 function! s:LookAtLogFile()
@@ -652,6 +699,7 @@ function! s:Change(env, label, delete, putInNonumber)
     else
 	exe top . ',' . bottom . 'g/\\label/delete'
     endif
+    nohlsearch
 endfunction
 
 function! s:DoEnvironment()
@@ -733,16 +781,18 @@ function! s:ChangeEnvironment(env)
 	    delete
 	endif
     endif
+    nohlsearch
     echo ''
 endfunction
 
 function! s:PutInNonumber()
-   call search('\\end\|\\\\')
-   if getline('.')[col('.')] != 'e'
-       .+1,'>s/\\\\/\\nonumber\\\\/e
-       normal! `>k
-       s/\s*$/  \\nonumber/
-   endif
+    call search('\\end\|\\\\')
+    if getline('.')[col('.')] != 'e'
+        .+1,'>s/\\\\/\\nonumber\\\\/e
+        normal! `>k
+        s/\s*$/  \\nonumber/
+    endif
+    nohlsearch
 endfunction
 
 " }}}
@@ -884,6 +934,7 @@ function! s:TeX_par()
 	normal Q
 	"normal! Q
     endif
+    nohlsearch
 endfun
 map <buffer> gw :call <SID>TeX_par()<CR>
 
@@ -1582,14 +1633,10 @@ iab <buffer> \v \vfill
 
 inoremap <buffer> ;; ;<Space><Space>
 
-inoremap <buffer> ;p <CR><CR>\noindent<CR>\textbf{p, $\ell$)}  <Esc>0f)08la
 inoremap <buffer> ;e E\left[\right]<Esc>F\i
-"inoremap <buffer> ;e \epsilon
-"inoremap <buffer> ;o \oplus
-
-
-"inoremap <buffer> ;d \diamond
-"inoremap <buffer> ;I \int_{\mathbf{R}^d}
+inoremap <buffer> ;e \epsilon
+inoremap <buffer> ;d \diamond
+inoremap <buffer> ;I \int_{\mathbf{R}^d}
 
 " }}}
 " "========================================================================="
