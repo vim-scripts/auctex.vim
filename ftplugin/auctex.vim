@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr at math rochester e d u
-" Last Change:	December 31, 2007
-" Version:  2.1.1
+" Last Change:	January 28, 2008
+" Version:  2.1.2
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -222,7 +222,7 @@ function! s:TexInsertTabWrapper(direction)
 	    return "\<Right>\<Right>"
 	elseif ending =~ '^}^{'
 	    return "\<Right>\<Right>\<Right>"
-	elseif ending[0] =~ '])\|]\||\|}'
+	elseif ending[0] =~ ')\|]\||\|}'
 	    return "\<Right>"
 	elseif ending =~ '{'
 	    return "\<Esc>f{a"
@@ -1378,6 +1378,7 @@ function! s:TexFill(width)
         " Remove ## from the search history.
 	call histdel("/", -1)|let @/=histget("/", -1)
     endif
+    nohlsearch
 endfunction
 
 function! s:TexFormatLine(width,current_line,current_column)
@@ -1431,6 +1432,7 @@ function! s:TexFormatLine(width,current_line,current_column)
 	exe "normal! ^f$a\<CR>\<Esc>"
 	call <SID>TexFormatLine(a:width,a:current_line,a:current_column)
     endif
+    nohlsearch
 endfunction
 
 " }}}
