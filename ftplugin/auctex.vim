@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr at math rochester e d u
-" Last Change:	January 28, 2008
-" Version:  2.1.2
+" Last Change:	February 4, 2008
+" Version:  2.1.3
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -1229,8 +1229,11 @@ function! s:Dots(var)
 	return '.'
     endif
 endfunction
-inoremap <buffer> . <C-R>=<SID>Dots(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <M-.> .
+" Uncomment the next line, and comment out the line after,
+" if you want the script to decide between latex and amslatex.
+" This slows down the macro.
+"inoremap <buffer> . <C-R>=<SID>Dots(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer> . <C-R>=<SID>Dots(b:AMSLatex)<CR>
 
 " }}}
 " "========================================================================="
