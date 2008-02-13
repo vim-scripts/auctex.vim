@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr at math rochester e d u
-" Last Change:	February 4, 2008
-" Version:  2.1.3
+" Last Change:	February 13, 2008
+" Version:  2.1.4
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -84,9 +84,10 @@ noremap <buffer> <C-LeftMouse> :execute "!xdvi -name -xdvi -sourceposition ".lin
 " or the bibtex file entries.
 " This was inspired by the emacs package Reftex.
 
-inoremap <Tab> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
-inoremap <M-Space> <C-R>=<SID>TexInsertTabWrapper ('backward')<CR>
-inoremap <C-Space> <C-R>=<SID>TexInsertTabWrapper ('forward')<CR>
+inoremap <buffer><silent> <Tab> <C-R>=<SID>TexInsertTabWrapper('backward')<CR>
+inoremap <buffer><silent> <M-Space> <C-R>=<SID>TexInsertTabWrapper('backward')<CR>
+inoremap <buffer><silent> <C-Space> <C-R>=<SID>TexInsertTabWrapper('forward')<CR>
+
 function! s:TexInsertTabWrapper(direction) 
 
     " Check to see if you're in a math environment.  Doesn't work for $$...$$.
@@ -124,10 +125,8 @@ function! s:TexInsertTabWrapper(direction)
     " The bibtex files listed in \bibliography{} are the ones shown.
     if strpart(line,column-5,5) == '\ref{'
 	let name = bufname(1)
-	let aux = strpart(name, 0, strlen(name)-3)."aux"
-	"if search('^\\usepackage\[active\]{srcltx}', 'bn')
-	"    split
-	"    return ''
+	let short = substitute(name, ".*/", "", "")
+	let aux = strpart(short, 0, strlen(short)-3)."aux"
 	if filereadable(aux)
 	    let tmp = tempname()
 	    execute "below split ".tmp
@@ -162,7 +161,7 @@ function! s:TexInsertTabWrapper(direction)
 	if 0 != search('\\begin{thebibliography}')
 	    bwipeout!
 	    execute "below split ".tmp
-	    execute search('\\begin{thebibliography}')
+	    call search('\\begin{thebibliography}')
 	    normal kdgg
 	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>BBLCiteInsertion('\\bibitem')<CR>a
 	    noremap <buffer> <CR> :call <SID>CiteInsertion('\\bibitem')<CR>a
@@ -182,10 +181,12 @@ function! s:TexInsertTabWrapper(direction)
 		execute "below split ".tmp
 		let file_exists = 0
 
+		let name = bufname(1)
+		let base = substitute(name, "[^/]*$", "", "")
 		while f != ''
 		    let comma = match(f, ',[^,]*$')
 		    if comma == -1
-			let file = f.'.bib'
+			let file = base.f.'.bib'
 			if filereadable(file)
 			    let file_exists = 1
 			    execute "0r ".file
@@ -193,7 +194,7 @@ function! s:TexInsertTabWrapper(direction)
 			let f = ''
 		    else
 			let file = strpart(f, comma+1)
-			let file = file.'.bib'
+			let file = base.file.'.bib'
 			if filereadable(file)
 			    let file_exists = 1
 			    execute "0r ".file
@@ -218,14 +219,18 @@ function! s:TexInsertTabWrapper(direction)
 	    endif
 	endif
     elseif dollar == 1   " If you're in a $..$ environment
-	if ending =~ '^}{'
-	    return "\<Right>\<Right>"
-	elseif ending =~ '^}^{'
-	    return "\<Right>\<Right>\<Right>"
-	elseif ending[0] =~ ')\|]\||\|}'
+	if ending[0] =~ ')\|]\||'
 	    return "\<Right>"
+	elseif ending =~ '^\\}'
+	    return "\<Right>\<Right>"
+	elseif ending =~ '^\\right\\'
+	    return "\<Esc>8la"
+	elseif ending =~ '^\\right'
+	    return "\<Esc>7la"
 	elseif ending =~ '{'
 	    return "\<Esc>f{a"
+	elseif ending[0] == '}'
+	    return "\<Right>"
 	else
 	    return "\<Esc>f$a"
 	end
@@ -235,16 +240,23 @@ function! s:TexInsertTabWrapper(direction)
 	    return "\<Esc>f&a"
         elseif ending[0] =~ '])\|]\||'
 	    return "\<Right>"
+	elseif ending =~ '^\\}'
+	    return "\<Right>\<Right>"
+	elseif ending =~ '^\\right\\'
+	    return "\<Esc>8la"
+	elseif ending =~ '^\\right'
+	    return "\<Esc>7la"
 	elseif ending =~ '{'
 	    return "\<Esc>f{a"
-	elseif ending =~ '}'
+	elseif ending[0] == '}'
 	    if line =~ '\\label'
 		return "\<Down>"
 	    else
 		return "\<Esc>f}a"
 	    endif
 	elseif column == len    "You are at the end of the line.
-	    return "\<Esc>/\\\\end\\|\\\\]\<CR>$o"
+	    call search("\\\\end\\|\\\\]")
+	    return "\<Esc>o"
 	else
 	    return "\<C-O>$"
 	endif
@@ -261,7 +273,6 @@ function! s:TexInsertTabWrapper(direction)
 	endif 
 
     endif
-    nohlsearch
 endfunction 
 
 " Inspired by RefTex
@@ -333,7 +344,6 @@ function! s:CiteInsertion(x)
     else
         bwipeout!
     endif
-    nohlsearch
 endfunction
 
 function! s:BibPrune(m)
@@ -343,9 +353,9 @@ function! s:BibPrune(m)
         /@
         let lsecond = line('.')
         if lfirst < lsecond
-	    exe lfirst.','.(lsecond-1).'delete'
+	    execute lfirst.','.(lsecond-1).'delete'
         else
-	    exe lfirst.',$delete'
+	    execute lfirst.',$delete'
         endif
     endif
 endfunction
@@ -358,10 +368,10 @@ endfunction
 " F2 inserts a minimal latex template
 " F3 inserts a letter template
 " F4 inserts an exam template
-exe "map <buffer> <F1> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_1 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
-exe "map <buffer> <F2> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_2 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
-exe "map <buffer> <F3> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_3 . "<CR>call search(\"opening\")<CR>endif<Esc><Space>f}i"
-exe "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_4
+execute "map <buffer> <F1> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_1 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
+execute "map <buffer> <F2> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_2 . "<CR>call search(\"title\")<CR>endif<Esc><Space>f}i"
+execute "map <buffer> <F3> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_3 . "<CR>call search(\"opening\")<CR>endif<Esc><Space>f}i"
+execute "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0read " . b:template_4
 
 "       dictionary
 " set dictionary+=(put filename and path here)
@@ -412,7 +422,7 @@ inoremap <buffer> <S-Tab> <Esc>:call <SID>NextTexError()<CR><Space>
 
 function! s:RunLatex()
     update
-    exe 'silent ' . b:latex_command
+    execute 'silent ' . b:latex_command
     if b:windows != 1
 	call <SID>NextTexError()
     endif
@@ -424,7 +434,10 @@ au BufRead *.log    set bufhidden=unload
 
 function! s:NextTexError()
     silent only
-    split +1 %<.log
+    let name = bufname(1)
+    let short = substitute(name, ".*/", "", "")
+    let log = strpart(short, 0, strlen(short)-3)."log"
+    execute "above split ".log
     if search('^l\.\d') == 0
         if search('LaTeX Warning: .* multiply') == 0
 	    bwipeout
@@ -443,7 +456,7 @@ function! s:NextTexError()
 		let command = "normal! \<C-W>Kzz\<C-W>wzz\<C-W>w"
 	    endif
 
-	    exe command
+	    execute command
 	endif
     else
 	syntax clear
@@ -462,21 +475,20 @@ function! s:NextTexError()
 	s/^/ /
 	write
 	wincmd x
-	exe command
+	execute command
     endif
-    nohlsearch
 endfunction
 
 " Run xdvi
 function! s:Xdvi()
     update
-    exe 'silent ' . b:latex_command
-    exe 'silent ' . b:latex_command
-    exe b:dvi_viewer_command 
+    execute 'silent ' . b:latex_command
+    execute 'silent ' . b:latex_command
+    execute b:dvi_viewer_command 
 endfunction
 
 function! s:CheckReferences(name, ref)
-    "exe "noremap \<buffer> \<C-L> :call \<SID>CheckReferences(\"" . a:name . "\",\"" . a:ref . "\")\<CR>\<Space>"
+    "execute "noremap \<buffer> \<C-L> :call \<SID>CheckReferences(\"" . a:name . "\",\"" . a:ref . "\")\<CR>\<Space>"
     only
     edit +1 %<.log
     syntax clear
@@ -496,11 +508,10 @@ function! s:CheckReferences(name, ref)
 	s/^/ /
 	write
 	split #
-	exe "normal! " . linenumber . "Gzz\<C-W>wzz\<C-W>w"
-	exe "normal! /\\\\" . a:ref . "{" . reference . "}\<CR>"
-	exe "normal! /" . reference . "\<CR>"
+	execute "normal! " . linenumber . "Gzz\<C-W>wzz\<C-W>w"
+	execute "normal! /\\\\" . a:ref . "{" . reference . "}\<CR>"
+	execute "normal! /" . reference . "\<CR>"
     endif
-    nohlsearch
 endfunction
 
 function! s:LookAtLogFile()
@@ -523,7 +534,7 @@ endfunction
 function! s:GetLineFromLogFile()
     let line = matchstr(getline('.'), 'line \d\+')
     wincmd t
-    exe strpart(line, 5, strlen(line)-5)
+    execute strpart(line, 5, strlen(line)-5)
 endfunction
 
 " }}}
@@ -680,26 +691,25 @@ function! s:Change(env, label, delete, putInNonumber)
 	s/\$\$\|\\begin{.\{-}}/\=first/
     endif
     if a:delete != ''
-	exe top . ',' . bottom . 's/' . a:delete . '//e'
+	execute top . ',' . bottom . 's/' . a:delete . '//e'
     endif
     if a:putInNonumber == 1
-        exe top
+        execute top
 	call search('\\end\|\\\\')
 	if line('.') != bottom
-	    exe '.+1,' . bottom . 's/\\\\/\\nonumber\\\\/e'
-	    exe (bottom-1) . 's/\s*$/  \\nonumber/'
+	    execute '.+1,' . bottom . 's/\\\\/\\nonumber\\\\/e'
+	    execute (bottom-1) . 's/\s*$/  \\nonumber/'
 	endif
     endif
     if a:label == 1
-	exe top
+	execute top
 	if getline(top+1) !~ '.*label.*'
 	    put ='\label{}'
 	    normal! $
 	endif
     else
-	exe top . ',' . bottom . 'g/\\label/delete'
+	execute top . ',' . bottom . 'g/\\label/delete'
     endif
-    nohlsearch
 endfunction
 
 function! s:DoEnvironment()
@@ -742,7 +752,7 @@ function! s:PutEnvironment(indent, env)
   if a:env=='array'
     call <SID>ArgumentsForArray(input("{rlc}? "))
   elseif a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\|gather\)$'
-    exe "normal! O\\label\<C-V>{" . input("Label? ") . "}\<Esc>j"
+    execute "normal! O\\label\<C-V>{" . input("Label? ") . "}\<Esc>j"
   endif
 endfunction
 
@@ -781,7 +791,6 @@ function! s:ChangeEnvironment(env)
 	    delete
 	endif
     endif
-    nohlsearch
     echo ''
 endfunction
 
@@ -792,7 +801,6 @@ function! s:PutInNonumber()
         normal! `>k
         s/\s*$/  \\nonumber/
     endif
-    nohlsearch
 endfunction
 
 " }}}
@@ -934,7 +942,6 @@ function! s:TeX_par()
 	normal Q
 	"normal! Q
     endif
-    nohlsearch
 endfun
 map <buffer> gw :call <SID>TeX_par()<CR>
 
@@ -1087,26 +1094,26 @@ function! s:LeftRight()
     let char = line[col('.')-1]
     let previous = line[col('.')-2]
     if char =~ '(\|\['
-        exe "normal! i\\left\<Esc>la\\right\<Esc>6h"
+        execute "normal! i\\left\<Esc>la\\right\<Esc>6h"
     elseif char == '|'
 	if previous == '\'
-	    exe "normal! ileft\\\<Esc>"
+	    execute "normal! ileft\\\<Esc>"
 	else
-	    exe "normal! i\\left\<Esc>"
+	    execute "normal! i\\left\<Esc>"
 	endif
-	exe "normal! la\\right\<Esc>6h"
+	execute "normal! la\\right\<Esc>6h"
     elseif char == '{'
 	if previous == '\'
-	    exe "normal! ileft\\\<Esc>la\\right\<Esc>6h"
+	    execute "normal! ileft\\\<Esc>la\\right\<Esc>6h"
 	else
-	    exe "normal! i\\left\\\<Esc>la\\right\\\<Esc>7h"
+	    execute "normal! i\\left\\\<Esc>la\\right\\\<Esc>7h"
 	endif
     elseif char == '<'
-	exe "normal! s\\langle\\rangle\<Esc>7h"
+	execute "normal! s\\langle\\rangle\<Esc>7h"
     elseif char == 'q'
-	exe "normal! s\\lefteqn\<C-V>{\<Esc>"
+	execute "normal! s\\lefteqn\<C-V>{\<Esc>"
     else
-	exe "normal! a\\label\<C-V>{}\<Esc>h"
+	execute "normal! a\\label\<C-V>{}\<Esc>h"
     endif
 endfunction
 inoremap <buffer> <M-l> <Esc>:call <SID>LeftRight()<CR>a
@@ -1119,25 +1126,25 @@ vnoremap <buffer> <Insert>l <C-C>`>a\right<Esc>`<i\left<Esc>
 "let char = getline('.')[col('.')-1]
 "let previous = getline('.')[col('.')-2]
 "if char == '('
-"	exe "normal! i\\left\<Esc>la\\right)\<Esc>7h"
+"	execute "normal! i\\left\<Esc>la\\right)\<Esc>7h"
 "elseif char == '['
-"	exe "normal! i\\left\<Esc>la\\right]\<Esc>7h"
+"	execute "normal! i\\left\<Esc>la\\right]\<Esc>7h"
 "elseif char == '|'
 "	if previous == '\'
-"		exe "normal! ileft\\\<Esc>la\\right\\\|\<Esc>8h"
+"		execute "normal! ileft\\\<Esc>la\\right\\\|\<Esc>8h"
 "	else
-"		exe "normal! i\\left\<Esc>la\\right\|\<Esc>7h"
+"		execute "normal! i\\left\<Esc>la\\right\|\<Esc>7h"
 "	endif
 "elseif char == '{'
 "	if previous == '\'
-"		exe "normal! ileft\\\<Esc>la\\right\\}\<Esc>8h"
+"		execute "normal! ileft\\\<Esc>la\\right\\}\<Esc>8h"
 "	else
-"		exe "normal! i\\left\\\<Esc>la\\right\\}\<Esc>8h"
+"		execute "normal! i\\left\\\<Esc>la\\right\\}\<Esc>8h"
 "	endif
 "elseif char == '<'
-"	exe "normal! s\\langle\\rangle\<Esc>7h"
+"	execute "normal! s\\langle\\rangle\<Esc>7h"
 "elseif char == 'q'
-"	exe "normal! s\\lefteqn{\<Esc>lx"
+"	execute "normal! s\\lefteqn{\<Esc>lx"
 "endif
 "endfunction
 
@@ -1181,31 +1188,8 @@ inoremap <buffer> " <C-R>=<SID>TexQuotes()<CR>
 "       return '.'
 "    endif
 "endfunction
-" Use this if you want . to result in a period followed by 1 space.
-"function! s:Dots(var)
-"    let column = col('.')
-"    let currentline = getline('.')
-"    let previous = currentline[column-2]
-"    let before = currentline[column-3]
-"    if strpart(currentline,column-3,2) == '. '
-"	return "\<BS>"
-"    elseif previous == '.'
-"    	if a:var == 0
-"	    if before == ','
-"		return "\<BS>\\ldots"
-"	    else
-"		return "\<BS>\\cdots"
-"	    endif
-"        else
-"	    return "\<BS>\\dots"
-"	endif
-"    elseif previous =~ '[\$A-Za-z]' && currentline !~ '@'
-"	return '. '
-"    else
-"	return '.'
-"    endif
-"endfunction
 " Use this if you want . to result in a period followed by 2 spaces.
+" To get just one space, see the comment in the function below.
 function! s:Dots(var)
     let column = col('.')
     let currentline = getline('.')
@@ -1224,7 +1208,8 @@ function! s:Dots(var)
 	    return "\<BS>\\dots"
 	endif
     elseif previous =~ '[\$A-Za-z]' && currentline !~ '@'
-	return '.  '
+	" To get just one space, replace '.  ' with '. ' below.
+	return <SID>TexFill(b:tw, '.  ')  "TexFill is defined in Auto-split
     else
 	return '.'
     endif
@@ -1232,8 +1217,8 @@ endfunction
 " Uncomment the next line, and comment out the line after,
 " if you want the script to decide between latex and amslatex.
 " This slows down the macro.
-"inoremap <buffer> . <C-R>=<SID>Dots(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> . <C-R>=<SID>Dots(b:AMSLatex)<CR>
+"inoremap <buffer><silent> . <C-R>=<SID>Dots(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> . <C-R>=<SID>Dots(b:AMSLatex)<CR>
 
 " }}}
 " "========================================================================="
@@ -1248,7 +1233,7 @@ function! s:SubBracket()
     endif
     return insert
 endfunction
-inoremap <buffer> _ <C-R>=<SID>SubBracket()<CR>
+inoremap <buffer><silent> _ <C-R>=<SID>SubBracket()<CR>
 
 " Typing ^^ results in ^{}
 function! s:SuperBracket()
@@ -1259,7 +1244,7 @@ function! s:SuperBracket()
     endif
     return insert
 endfunction
-inoremap <buffer> ^ <C-R>=<SID>SuperBracket()<CR>
+inoremap <buffer><silent> ^ <C-R>=<SID>SuperBracket()<CR>
 
 " }}}
 " "========================================================================="
@@ -1269,18 +1254,18 @@ inoremap <buffer> ^ <C-R>=<SID>SuperBracket()<CR>
 
 " Typing the symbol a second time (for example, $$) will result in one
 " of the symbole (for instance, $).  With {, typing \{ will result in \{\}.
-inoremap <buffer> ( <C-R>=<SID>Double('(',')')<CR>
-"inoremap <buffer> [ <C-R>=<SID>Double('[',']')<CR>
-inoremap <buffer> [ <C-R>=<SID>CompleteSlash('[',']')<CR>
-inoremap <buffer> $ <C-R>=<SID>Double('$','$')<CR>
-inoremap <buffer> & <C-R>=<SID>DoubleAmpersands()<CR>
-inoremap <buffer> { <C-R>=<SID>CompleteSlash('{','}')<CR>
-inoremap <buffer> \| <C-R>=<SID>CompleteSlash("\|","\|")<CR>
+inoremap <buffer><silent> ( <C-R>=<SID>Double('(',')')<CR>
+"inoremap <buffer><silent> [ <C-R>=<SID>Double('[',']')<CR>
+inoremap <buffer><silent> [ <C-R>=<SID>CompleteSlash('[',']')<CR>
+inoremap <buffer><silent> $ <C-R>=<SID>Double('$','$')<CR>
+inoremap <buffer><silent> & <C-R>=<SID>DoubleAmpersands()<CR>
+inoremap <buffer><silent> { <C-R>=<SID>CompleteSlash('{','}')<CR>
+inoremap <buffer><silent> \| <C-R>=<SID>CompleteSlash("\|","\|")<CR>
 
 " If you would rather insert $$ individually, the following macro by 
 " Charles Campbell will make the cursor blink on the previous dollar sign,
 " if it is in the same line.
-" inoremap $ $<C-O>F$<C-O>:redraw!<CR><C-O>:sleep 500m<CR><C-O>f$<Right>
+" inoremap <buffer> $ $<C-O>F$<C-O>:redraw!<CR><C-O>:sleep 500m<CR><C-O>f$<Right>
 
 " }}}
 
@@ -1358,30 +1343,27 @@ vnoremap <buffer> <M-4> <C-C>`>a$<Esc>`<i$<Esc>
 noremap <buffer> gq :call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
 noremap <buffer> Q :call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
 vnoremap <buffer> Q J:call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
-noremap <buffer> <C-CR> :call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
-inoremap <buffer> <C-CR> <Esc>:call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
-vnoremap <buffer> <C-CR> J:call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<C>
 "  With this map, <Space> will split up a long line, keeping the dollar
 "  signs together (see the next function, TexFormatLine).
-inoremap <buffer> <Space> <Space><Esc>:call <SID>TexFill(b:tw)<CR>a
+inoremap <buffer><silent> <Space> <C-R>=<SID>TexFill(b:tw, ' ')<CR>
 
 " }}}
 
 " Functions       {{{
 
-function! s:TexFill(width)
+function! s:TexFill(width, string)
     if col('.') > a:width
 	" For future use, record the current line and 
 	" the number of the current column.
 	let current_line = getline('.')
 	let current_column = col('.')
-	exe "normal! a##\<Esc>"
+	execute 'normal! i'.a:string.'##'
 	call <SID>TexFormatLine(a:width,current_line,current_column)
-        exe "normal! ?##\<CR>2s\<Esc>"
-        " Remove ## from the search history.
-	call histdel("/", -1)|let @/=histget("/", -1)
+	call search('##', 'b')
+	return "\<Del>\<Del>"
+    else
+	return a:string
     endif
-    nohlsearch
 endfunction
 
 function! s:TexFormatLine(width,current_line,current_column)
@@ -1407,10 +1389,11 @@ function! s:TexFormatLine(width,current_line,current_column)
 	    let counter = counter + 1
 	endwhile
 	" Get ready to split the line.
-	exe 'normal! ' . (a:width + 1) . '|'
+	execute 'normal! ' . (a:width + 1) . '|'
 	if evendollars
 	" Then you are not between dollars.
-	   exe "normal! ?\\$\\+\\| \<CR>W"
+	    call search("\\$\\+\\| ", 'b')
+	    normal W
 	else
 	" Then you are between dollars.
 	    normal! F$
@@ -1425,17 +1408,16 @@ function! s:TexFormatLine(width,current_line,current_column)
 	if first == '$' && number_of_dollars == 1
 	    let go = 0
 	else
-	    exe "normal! i\<CR>\<Esc>$"
+	    execute "normal! i\<CR>\<Esc>$"
 	    " Find the first nonwhitespace character.
 	    let first = matchstr(getline('.'), '\S')
 	endif
 	let length = col('.')
     endwhile
     if go == 0 && strpart(a:current_line,0,a:current_column) =~ '.*\$.\+\$.*'
-	exe "normal! ^f$a\<CR>\<Esc>"
+	execute "normal! ^f$a\<CR>\<Esc>"
 	call <SID>TexFormatLine(a:width,a:current_line,a:current_column)
     endif
-    nohlsearch
 endfunction
 
 " }}}
@@ -1483,14 +1465,14 @@ function! s:PutLeftRight()
     let char = getline('.')[col('.') - 1]
     if previous == '\'
     if char == '{'
-	exe "normal! ileft\\\<Esc>l%iright\\\<Esc>l%"
+	execute "normal! ileft\\\<Esc>l%iright\\\<Esc>l%"
     elseif char == '}'
-	exe "normal! iright\\\<Esc>l%ileft\\\<Esc>l%"
+	execute "normal! iright\\\<Esc>l%ileft\\\<Esc>l%"
     endif
     elseif char =~ '\[\|('
-	exe "normal! i\\left\<Esc>l%i\\right\<Esc>l%"
+	execute "normal! i\\left\<Esc>l%i\\right\<Esc>l%"
     elseif char =~ '\]\|)'
-	exe "normal! i\\right\<Esc>l%i\\left\<Esc>l%"
+	execute "normal! i\\right\<Esc>l%i\\left\<Esc>l%"
     endif
 endfunction
 
@@ -1513,9 +1495,9 @@ function! s:PutBigg()
     let b = getline('.')[col('.') - 2]
     let c = getline('.')[col('.') - 1]
     if b == '\'
-	exe "normal! hi" . in . "\<Esc>l%hi" . in . "\<Esc>l%"
+	execute "normal! hi" . in . "\<Esc>l%hi" . in . "\<Esc>l%"
     elseif c =~ '{\|\[\|(\|}\|\]\|)'
-	exe "normal! i" . in . "\<Esc>l%i" . in . "\<Esc>l%"
+	execute "normal! i" . in . "\<Esc>l%i" . in . "\<Esc>l%"
     endif
 endfunction
 
@@ -1527,10 +1509,10 @@ function! s:ChangeLeftRightBigg()
     let c = getline('.')[col('.') - 1]
     if b == '\'
       if c =~ '{\|}'
-	exe "normal! 2F\\xcw" . in . "\<Esc>2l%2F\\xcw" . in . "\<Esc>2l%"
+	execute "normal! 2F\\xcw" . in . "\<Esc>2l%2F\\xcw" . in . "\<Esc>2l%"
       endif
     elseif c =~ '\[\|(\|\]\|)'
-      exe "normal! F\\xcw" . in . "\<Esc>l%F\\xcw" . in . "\<Esc>l%"
+      execute "normal! F\\xcw" . in . "\<Esc>l%F\\xcw" . in . "\<Esc>l%"
     endif
 endfunction
 
@@ -1538,9 +1520,9 @@ endfunction
 function! s:ChangeCurly()
     let c = getline('.')[col('.') - 1]
     if c =~ '\[\|('
-	exe "normal! i\\{\<Esc>l%i\\\<Esc>lr}``xh"
+	execute "normal! i\\{\<Esc>l%i\\\<Esc>lr}``xh"
     elseif c =~ '\]\|)'
-	exe "normal! %i\\{\<Esc>l%i\\\<Esc>lr}``xh%"
+	execute "normal! %i\\{\<Esc>l%i\\\<Esc>lr}``xh%"
     endif
 endfunction
 
@@ -1639,7 +1621,7 @@ iab <buffer> \v \vfill
 inoremap <buffer> ;; ;<Space><Space>
 
 inoremap <buffer> ;e E\left[\right]<Esc>F\i
-inoremap <buffer> ;e \epsilon
+"inoremap <buffer> ;e \epsilon
 inoremap <buffer> ;d \diamond
 inoremap <buffer> ;I \int_{\mathbf{R}^d}
 
