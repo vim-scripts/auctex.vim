@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, cmlr at math rochester e d u
-" Last Change:	February 13, 2008
-" Version:  2.1.4
+" Last Change:	March 2, 2008
+" Version:  2.2
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -227,7 +227,7 @@ function! s:TexInsertTabWrapper(direction)
 	    return "\<Esc>8la"
 	elseif ending =~ '^\\right'
 	    return "\<Esc>7la"
-	elseif ending =~ '{'
+	elseif ending =~ '^}\(\^\|_\|\){'
 	    return "\<Esc>f{a"
 	elseif ending[0] == '}'
 	    return "\<Right>"
@@ -238,7 +238,7 @@ function! s:TexInsertTabWrapper(direction)
     elseif math == 1    " If you're in a regular math environment.
 	if ending =~ '^\s*&'
 	    return "\<Esc>f&a"
-        elseif ending[0] =~ '])\|]\||'
+        elseif ending[0] =~ ')\|]\||'
 	    return "\<Right>"
 	elseif ending =~ '^\\}'
 	    return "\<Right>\<Right>"
@@ -246,7 +246,7 @@ function! s:TexInsertTabWrapper(direction)
 	    return "\<Esc>8la"
 	elseif ending =~ '^\\right'
 	    return "\<Esc>7la"
-	elseif ending =~ '{'
+	elseif ending =~ '^}\(\^\|_\|\){'
 	    return "\<Esc>f{a"
 	elseif ending[0] == '}'
 	    if line =~ '\\label'
@@ -383,24 +383,24 @@ execute "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0r
 " Key Bindings  {{{
 
 " Run Latex;  change these bindings if you like.
-noremap <buffer> K :call <SID>RunLatex()<CR><Esc>
-noremap <buffer> <C-K> :call <SID>NextTexError()<CR>
-noremap <buffer> <S-Tab> :call <SID>NextTexError()<CR>
-noremap <buffer> <C-Tab> :call <SID>RunLatex()<CR><Esc>
-inoremap <buffer> <C-Tab> <C-O>:call <SID>RunLatex()<CR><Esc>
+noremap <buffer><silent> K :call <SID>RunLatex()<CR><Esc>
+noremap <buffer><silent> <C-K> :call <SID>NextTexError()<CR>
+noremap <buffer><silent> <S-Tab> :call <SID>NextTexError()<CR>
+noremap <buffer><silent> <C-Tab> :call <SID>RunLatex()<CR><Esc>
+inoremap <buffer><silent> <C-Tab> <C-O>:call <SID>RunLatex()<CR><Esc>
 
-noremap <buffer> \lr :call <SID>CheckReferences('Reference', 'ref')<CR><Space>
-noremap <buffer> \lc :call <SID>CheckReferences('Citation', 'cite')<CR><Space>
-noremap <buffer> \lg :call <SID>LookAtLogFile()<CR>gg/LaTeX Warning\\|^!<CR>
+noremap <buffer><silent> \lr :call <SID>CheckReferences('Reference', 'ref')<CR><Space>
+noremap <buffer><silent> \lc :call <SID>CheckReferences('Citation', 'cite')<CR><Space>
+noremap <buffer><silent> \lg :call <SID>LookAtLogFile()<CR>gg/LaTeX Warning\\|^!<CR>
 
 " Run the Latex viewer;  change these bindings if you like.
-noremap <buffer> <S-Esc> :call <SID>Xdvi()<CR><Space>
-inoremap <buffer> <S-Esc> <Esc>:call <SID>Xdvi()<CR><Space>
+noremap <buffer><silent> <S-Esc> :call <SID>Xdvi()<CR><Space>
+inoremap <buffer><silent> <S-Esc> <Esc>:call <SID>Xdvi()<CR><Space>
 
 " Run Ispell on either the buffer, or the visually selected word.
-noremap <S-Insert> :w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR>:redraw<CR>:echo "No (more) spelling errors."<CR>
-inoremap <S-Insert> <Esc>:w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR>:redraw<CR>:echo "No (more) spelling errors."<CR>
-vnoremap <S-Insert> <C-C>`<v`>s<Space><Esc>mq<C-W>s:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>:redraw<CR>:echo "No (more) spelling errors."<CR>
+noremap <buffer><silent> <S-Insert> :w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR>:redraw<CR>:echo "No (more) spelling errors."<CR>
+inoremap <buffer><silent> <S-Insert> <Esc>:w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><Space>:e %<CR>:redraw<CR>:echo "No (more) spelling errors."<CR>
+vnoremap <buffer><silent> <S-Insert> <C-C>`<v`>s<Space><Esc>mq<C-W>s:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:!xterm -bg ivory -fn 10x20 -e ispell %<CR><CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>:redraw<CR>:echo "No (more) spelling errors."<CR>
 
 " Run Ispell (Thanks the Charles Campbell)
 " The first set is for vim, the second set for gvim.
@@ -413,8 +413,8 @@ vnoremap <S-Insert> <C-C>`<v`>s<Space><Esc>mq<C-W>s:e ispell.tmp<CR>i<C-R>"<Esc>
 " To find the tex error, first run Latex (see the 2 previous maps).
 " If there is an error, press "x" or "r" to stop the Tex processing.
 " Then press Shift-Tab to go to the position of the error.
-noremap <buffer> <S-Tab> :call <SID>NextTexError()<CR><Space>
-inoremap <buffer> <S-Tab> <Esc>:call <SID>NextTexError()<CR><Space>
+noremap <buffer><silent> <S-Tab> :call <SID>NextTexError()<CR><Space>
+inoremap <buffer><silent> <S-Tab> <Esc>:call <SID>NextTexError()<CR><Space>
 
 " }}}
 
@@ -441,7 +441,7 @@ function! s:NextTexError()
     if search('^l\.\d') == 0
         if search('LaTeX Warning: .* multiply') == 0
 	    bwipeout
-	    call input('\nNo (More) Errors Found\n\nPress "enter" to go on.')
+	    call input('No (More) Errors Found.')
 	else
 	    syntax clear
 	    syntax match err /^LaTeX Warning: .*/
@@ -497,7 +497,7 @@ function! s:CheckReferences(name, ref)
     if search('^LaTeX Warning: ' . a:name) == 0
 	edit #
 	redraw
-	call input("\nNo (More) " . a:name . " Errors Found\n\nPress 'enter' to go on.")
+	call input('No (More) ' . a:name . ' Errors Found.')
     else
 	let linenumber = matchstr(getline('.'), '\d\+\.$')
 	let linenumber = strpart(linenumber, 0, strlen(linenumber)-1)
@@ -568,35 +568,35 @@ endfunction
 "
 " and S-F1 - S-F5, which are used to change environments, are similar.
 
-inoremap <buffer> <F1> \begin{equation}<CR>\label{}<CR><CR>\end{equation}<Esc>2k$i
-inoremap <buffer> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> <F1> \begin{equation}<CR>\label{}<CR><CR>\end{equation}<Esc>2k$i
+inoremap <buffer><silent> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
 "inoremap <buffer> <F2> <C-R>=<SID>FTwo(0)<CR>
-inoremap <buffer> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
-noremap <buffer> <S-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
-inoremap <buffer> <S-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
-noremap <buffer> <S-F2> :silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <S-F2> <Esc>:silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-noremap <buffer> <S-F3> :silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-inoremap <buffer> <S-F3> <Esc>:silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-noremap <buffer> <S-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer> <S-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer><silent> <S-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
+inoremap <buffer><silent> <S-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
+noremap <buffer><silent> <S-F2> :silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> <S-F2> <Esc>:silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer><silent> <S-F3> :silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+inoremap <buffer><silent> <S-F3> <Esc>:silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+noremap <buffer><silent> <S-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> <S-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
-inoremap <buffer> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
-inoremap <buffer> <F7> \textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
+inoremap <buffer><silent> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
+inoremap <buffer><silent> <F7> \textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
 
 " The next idea came from a contributed NEdit macro.
 " typing the name of the environment followed by <F5> results in 
 " \begin{environment} \end{environment}
 " But, typing <F5> at the beginning of the line results in a prompt
 " for the name of the environment.
-inoremap <buffer> <F5> <Esc>:call <SID>DoEnvironment()<CR>
+inoremap <buffer><silent> <F5> <Esc>:call <SID>DoEnvironment()<CR>
 
 " Due to Ralf Arens <ralf.arens@gmx.net>
 "inoremap <buffer> <F5> <C-O>:call <SID>PutEnvironment(input('Environment? '))<CR>
-inoremap <buffer> <S-F5> <C-O>:call <SID>ChangeEnvironment(input('Environment? '))<CR>
-noremap <buffer> <S-F5> :call <SID>ChangeEnvironment(input('Environment? '))<CR>
+inoremap <buffer><silent> <S-F5> <C-O>:call <SID>ChangeEnvironment(input('Environment? '))<CR>
+noremap <buffer><silent> <S-F5> :call <SID>ChangeEnvironment(input('Environment? '))<CR>
 
 " }}}
 
@@ -943,7 +943,7 @@ function! s:TeX_par()
 	"normal! Q
     endif
 endfun
-map <buffer> gw :call <SID>TeX_par()<CR>
+map <buffer><silent> gw :call <SID>TeX_par()<CR>
 
 " }}}
 " "========================================================================="
@@ -1218,7 +1218,8 @@ endfunction
 " if you want the script to decide between latex and amslatex.
 " This slows down the macro.
 "inoremap <buffer><silent> . <C-R>=<SID>Dots(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer><silent> . <C-R>=<SID>Dots(b:AMSLatex)<CR>
+inoremap <buffer><silent> . <Space><BS><C-R>=<SID>Dots(b:AMSLatex)<CR>
+" Note: <Space><BS> makes word completion work correctly.
 
 " }}}
 " "========================================================================="
@@ -1345,7 +1346,8 @@ noremap <buffer> Q :call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
 vnoremap <buffer> Q J:call <SID>TexFormatLine(b:tw,getline('.'),col('.'))<CR>
 "  With this map, <Space> will split up a long line, keeping the dollar
 "  signs together (see the next function, TexFormatLine).
-inoremap <buffer><silent> <Space> <C-R>=<SID>TexFill(b:tw, ' ')<CR>
+inoremap <buffer><silent> <Space> <Space><BS><C-R>=<SID>TexFill(b:tw, ' ')<CR>
+" Note: <Space><BS> makes word completion work correctly.
 
 " }}}
 
@@ -1429,17 +1431,17 @@ endfunction
 
 " Bindings for the Bracket Macros  {{{
 
-noremap <buffer> <Tab>x :call <SID>DeleteBrackets()<CR>
-noremap <buffer> <Tab>l :call <SID>PutLeftRight()<CR>
-noremap <buffer> <Tab><Del> :call <SID>DeleteBrackets()<CR>
-noremap <buffer> <Tab>( :call <SID>ChangeRound()<CR>
-noremap <buffer> <Tab>[ :call <SID>ChangeSquare()<CR>
-noremap <buffer> <Tab>{ :call <SID>ChangeCurly()<CR>
-noremap <buffer> <Tab>c :call <SID>ChangeLeftRightBigg()<CR>
-noremap <buffer> <Tab>b :call <SID>PutBigg()<CR>
+noremap <buffer><silent> <Tab>x :call <SID>DeleteBrackets()<CR>
+noremap <buffer><silent> <Tab>l :call <SID>PutLeftRight()<CR>
+noremap <buffer><silent> <Tab><Del> :call <SID>DeleteBrackets()<CR>
+noremap <buffer><silent> <Tab>( :call <SID>ChangeRound()<CR>
+noremap <buffer><silent> <Tab>[ :call <SID>ChangeSquare()<CR>
+noremap <buffer><silent> <Tab>{ :call <SID>ChangeCurly()<CR>
+noremap <buffer><silent> <Tab>c :call <SID>ChangeLeftRightBigg()<CR>
+noremap <buffer><silent> <Tab>b :call <SID>PutBigg()<CR>
 
-noremap <buffer> <C-Del> :call <SID>DeleteBrackets()<CR>
-inoremap <buffer> <C-BS> <Left><C-O>:call <SID>DeleteBrackets()<CR>
+noremap <buffer><silent> <C-Del> :call <SID>DeleteBrackets()<CR>
+inoremap <buffer><silent> <C-BS> <Left><C-O>:call <SID>DeleteBrackets()<CR>
 
 " }}}
 
