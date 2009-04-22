@@ -1,6 +1,6 @@
 " Vim filetype plugin
 " Language:	LaTeX
-" Maintainer: Carl Mueller, cmlr at math rochester e d u
+" Maintainer: Carl Mueller, math at carlm e4ward c o m
 " Last Change:	March 2, 2008
 " Version:  2.2
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
@@ -168,7 +168,7 @@ function! s:TexInsertTabWrapper(direction)
 	    noremap \<buffer> q :bwipeout!<CR>i
 	    return "\<Esc>"
 	else
-	    let l = search('\\bibliography')
+	    let l = search('\\bibliography{')
 	    bwipeout!
 	    if l == 0
 		return ''
