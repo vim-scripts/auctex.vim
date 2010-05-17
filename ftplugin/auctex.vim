@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	March 2, 2008
-" Version:  2.2
+" Last Change:	May 17, 2010
+" Version:  2.2.2
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -669,15 +669,15 @@ endfunction
 function! s:Change(env, label, delete, putInNonumber)
     if a:env == '['
 	if b:DoubleDollars == 0
-	    let first = '\\['
-	    let second = '\\]'
+	    let first = '\['
+	    let second = '\]'
 	else
 	    let first = '$$'
 	    let second = '$$'
 	endif
     else
-	let first = '\\begin{' . a:env . '}'
-	let second = '\\end{' . a:env . '}'
+	let first = '\begin{' . a:env . '}'
+	let second = '\end{' . a:env . '}'
     endif
     if b:DoubleDollars == 0
 	let bottom = searchpair('\\\[\|\\begin{','','\\\]\|\\end{','')
