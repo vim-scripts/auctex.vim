@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	May 17, 2010
-" Version:  2.2.2
+" Last Change:	May 25, 2010
+" Version:  2.2.3
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -1066,6 +1066,37 @@ inoremap <buffer> <Insert>; \dot{}<Left>
 " Alt-<Right> or Insert-<Right> inserts \lim_{}
 inoremap <buffer> <M-Right> \lim_{}<Left>
 inoremap <buffer> <Insert><Right> \lim_{}<Left>
+
+" }}}
+" "========================================================================="
+" Double insert key macros for working with brackets   {{{
+
+function! s:DoubleInsert()
+    echo "Brackets: d: del  ()[]{}: change  l: \\left  p: prefix  c: change\n"
+    let c = nr2char(getchar())
+    if c == "d"
+	call <SID>DeleteBrackets()
+    elseif c == "("
+	call <SID>ChangeRound()
+    elseif c == ")"
+	call <SID>ChangeRound()
+    elseif c == "["
+	call <SID>ChangeSquare()
+    elseif c == "]"
+	call <SID>ChangeSquare()
+    elseif c == "{"
+	call <SID>ChangeCurly()
+    elseif c == "}"
+	call <SID>ChangeCurly()
+    elseif c == "l"
+	call <SID>PutLeftRight()
+    elseif c == "p"
+	call <SID>PutBigg()
+    elseif c == "c"
+	call <SID>ChangeLeftRightBigg()
+    endif
+endfunction
+noremap <buffer> <Insert><Insert> :call <SID>DoubleInsert()<CR>
 
 " }}}
 " "========================================================================="
