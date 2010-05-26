@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	May 25, 2010
-" Version:  2.2.3
+" Last Change:	May 26, 2010
+" Version:  2.2.4
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -1069,37 +1069,6 @@ inoremap <buffer> <Insert><Right> \lim_{}<Left>
 
 " }}}
 " "========================================================================="
-" Double insert key macros for working with brackets   {{{
-
-function! s:DoubleInsert()
-    echo "Brackets: d: del  ()[]{}: change  l: \\left  p: prefix  c: change\n"
-    let c = nr2char(getchar())
-    if c == "d"
-	call <SID>DeleteBrackets()
-    elseif c == "("
-	call <SID>ChangeRound()
-    elseif c == ")"
-	call <SID>ChangeRound()
-    elseif c == "["
-	call <SID>ChangeSquare()
-    elseif c == "]"
-	call <SID>ChangeSquare()
-    elseif c == "{"
-	call <SID>ChangeCurly()
-    elseif c == "}"
-	call <SID>ChangeCurly()
-    elseif c == "l"
-	call <SID>PutLeftRight()
-    elseif c == "p"
-	call <SID>PutBigg()
-    elseif c == "c"
-	call <SID>ChangeLeftRightBigg()
-    endif
-endfunction
-noremap <buffer> <Insert><Insert> :call <SID>DoubleInsert()<CR>
-
-" }}}
-" "========================================================================="
 " Alt-l or Insert-l inserts \left...\right (3 alternatives)   {{{
 
 " In the first version, you type Alt-l and then the bracket
@@ -1457,25 +1426,43 @@ endfunction
 
 " }}}
 " "========================================================================="
-" Matching Brackets Macros.   {{{
+" Matching Brackets Macros using <Insert><Insert>.   {{{
 " (due to Saul Lubkin).  For normal mode.
 
-" Bindings for the Bracket Macros  {{{
+" Double insert key macros for working with brackets   {{{
+" The cursor must be over a bracket, in normal mode.
 
-noremap <buffer><silent> <Tab>x :call <SID>DeleteBrackets()<CR>
-noremap <buffer><silent> <Tab>l :call <SID>PutLeftRight()<CR>
-noremap <buffer><silent> <Tab><Del> :call <SID>DeleteBrackets()<CR>
-noremap <buffer><silent> <Tab>( :call <SID>ChangeRound()<CR>
-noremap <buffer><silent> <Tab>[ :call <SID>ChangeSquare()<CR>
-noremap <buffer><silent> <Tab>{ :call <SID>ChangeCurly()<CR>
-noremap <buffer><silent> <Tab>c :call <SID>ChangeLeftRightBigg()<CR>
-noremap <buffer><silent> <Tab>b :call <SID>PutBigg()<CR>
+function! s:DoubleInsert()
+    let c = nr2char(getchar())
+    if c == "d"
+	call <SID>DeleteBrackets()
+    elseif c == "("
+	call <SID>ChangeRound()
+    elseif c == ")"
+	call <SID>ChangeRound()
+    elseif c == "["
+	call <SID>ChangeSquare()
+    elseif c == "]"
+	call <SID>ChangeSquare()
+    elseif c == "{"
+	call <SID>ChangeCurly()
+    elseif c == "}"
+	call <SID>ChangeCurly()
+    elseif c == "l"
+	call <SID>PutLeftRight()
+    elseif c == "p"
+	call <SID>PutBigg()
+    elseif c == "c"
+	call <SID>ChangeLeftRightBigg()
+    endif
+endfunction
+    
+noremap <buffer><silent> <Insert><Insert> :echo "Brackets: d: del  ()[]{}: change  l: \\left  p: prefix  c: change\n\n"<CR>:call <SID>DoubleInsert()<CR>
 
 noremap <buffer><silent> <C-Del> :call <SID>DeleteBrackets()<CR>
 inoremap <buffer><silent> <C-BS> <Left><C-O>:call <SID>DeleteBrackets()<CR>
 
 " }}}
-
 " Functions   {{{
 
 " Delete matching brackets.
