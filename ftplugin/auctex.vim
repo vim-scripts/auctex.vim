@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	May 26, 2010
-" Version:  2.2.4
+" Last Change:	May 27, 2010
+" Version:  2.2.5
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -383,7 +383,7 @@ execute "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0r
 " Key Bindings  {{{
 
 " Run Latex;  change these bindings if you like.
-noremap <buffer><silent> K :call <SID>RunLatex()<CR><Esc>
+noremap <buffer><silent> K :call <SID>RunLatex()<CR><Esc>:!pkill -USR1 xdvi<CR><Esc>
 noremap <buffer><silent> <C-K> :call <SID>NextTexError()<CR>
 noremap <buffer><silent> <S-Tab> :call <SID>NextTexError()<CR>
 noremap <buffer><silent> <C-Tab> :call <SID>RunLatex()<CR><Esc>
@@ -1334,6 +1334,7 @@ vnoremap <buffer> <Leader>{ <C-C>`>a}<Esc>`<i{<Esc>
 vnoremap <buffer> & <C-C>`>a&<Esc>`<i&<Esc>
 vnoremap <buffer> <Leader>$ <C-C>`>a$<Esc>`<i$<Esc>
 vnoremap <buffer> <M-4> <C-C>`>a$<Esc>`<i$<Esc>
+vnoremap <buffer> <Leader>/ <C-C>`>a}{}<Esc>`<i\frac{<Esc>f{a
 
 " }}}
 " "========================================================================="
@@ -1587,20 +1588,21 @@ endfunction
 " Menus   {{{
 
 " Bracket Menus
-nnoremenu 40.401 Brackets.delete\ brackets\ \ \ Ctrl+Del,Ctrl+BS,Tab-x :call <SID>DeleteBrackets()<CR>
-inoremenu 40.402 Brackets.delete\ brackets\ \ \ Ctrl+Del,Ctrl+BS,Tab-x <Left><C-O>:call <SID>DeleteBrackets()<CR> nnoremenu 40.403 Brackets.change\ to\ () :call <SID>ChangeRound()<CR>
-nnoremenu 40.404 Brackets.change\ to\ () :call <SID>ChangeRound()<CR>
-inoremenu 40.404 Brackets.change\ to\ () <Esc>:call <SID>ChangeRound()<CR>a
-nnoremenu 40.405 Brackets.change\ to\ [] :call <SID>ChangeSquare()<CR>
-inoremenu 40.406 Brackets.change\ to\ [] <Esc>:call <SID>ChangeSquare()<CR>a
-nnoremenu 40.407 Brackets.change\ to\ \\{\\} :call <SID>ChangeCurly()<CR>
-inoremenu 40.408 Brackets.change\ to\ \\{\\} <Esc>:call <SID>ChangeCurly()<CR>a
-nnoremenu 40.409 Brackets.insert\ \\left,\\right :call <SID>PutLeftRight()<CR>
-inoremenu 40.410 Brackets.insert\ \\left,\\right <Esc>:call <SID>PutLeftRight()<CR>a
-nnoremenu 40.410 Brackets.insert\ (default\ \\Big) :call <SID>PutBigg()<CR>
-inoremenu 40.411 Brackets.insert\ (default\ \\Big) <Esc>:call <SID>PutBigg()<CR>a
-nnoremenu 40.412 Brackets.change\ \\left,\\right,\\big,\ etc\ to\ (default\ nothing) :call <SID>ChangeLeftRightBigg()<CR>
-inoremenu 40.413 Brackets.change\ \\left,\\right\,\\big,\ etc\ to\ (default\ nothing) <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
+nnoremenu 40.401 Brac&kets.&delete\ brackets\ \ \ Ctrl+Del,Ctrl+BS,Tab-x :call <SID>DeleteBrackets()<CR>
+inoremenu 40.402 Brac&kets.&delete\ brackets\ \ \ Ctrl+Del,Ctrl+BS,Tab-x <Left><C-O>:call <SID>DeleteBrackets()<CR>
+nnoremenu 40.403 Brac&kets.change\ to\ &() :call <SID>ChangeRound()<CR>
+nnoremenu 40.404 Brac&kets.change\ to\ &() :call <SID>ChangeRound()<CR>
+inoremenu 40.404 Brac&kets.change\ to\ &() <Esc>:call <SID>ChangeRound()<CR>a
+nnoremenu 40.405 Brac&kets.change\ to\ &[] :call <SID>ChangeSquare()<CR>
+inoremenu 40.406 Brac&kets.change\ to\ &[] <Esc>:call <SID>ChangeSquare()<CR>a
+nnoremenu 40.407 Brac&kets.change\ to\ \&\{\\} :call <SID>ChangeCurly()<CR>
+inoremenu 40.408 Brac&kets.change\ to\ \&\{\\} <Esc>:call <SID>ChangeCurly()<CR>a
+nnoremenu 40.409 Brac&kets.insert\ \&\left,\\right :call <SID>PutLeftRight()<CR>
+inoremenu 40.410 Brac&kets.insert\ \&\left,\\right <Esc>:call <SID>PutLeftRight()<CR>a
+nnoremenu 40.410 Brac&kets.&insert\ (default\ \\Big) :call <SID>PutBigg()<CR>
+inoremenu 40.411 Brac&kets.&insert\ (default\ \\Big) <Esc>:call <SID>PutBigg()<CR>a
+nnoremenu 40.412 Brac&kets.&change\ \\left,\\right,\\big,\ etc\ to\ (default\ nothing) :call <SID>ChangeLeftRightBigg()<CR>
+inoremenu 40.413 &Brackets.&change\ \\left,\\right\,\\big,\ etc\ to\ (default\ nothing) <Esc>:call <SID>ChangeLeftRightBigg()<CR>a
 
 " Menus for running Latex, etc.
 nnoremenu 50.401 Latex.run\ latex\ \ \ \ Control-Tab :w<CR>:silent ! xterm -bg ivory -fn 7x14 -e latex % &<CR>
