@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	May 27, 2010
-" Version:  2.2.5
+" Last Change:	July 30, 2010
+" Version:  2.2.6
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -770,13 +770,13 @@ function! s:ChangeEnvironment(env)
     let l = getline('.')
     let indent = strpart(l, 0, match(l, '\S'))
     if b:DoubleDollars == 0
-	s/\\\]\|\\end{.\{-}}/\='\\end{' . a:env . '}'/
+	s/\\\]\|\\end{.\{-}}/\='\end{' . a:env . '}'/
 	call searchpair('\\\[\|\\begin{','','\\\]\|\\end{','b')
-	s/\\\[\|\\begin{.\{-}}/\='\\begin{' . a:env . '}'/
+	s/\\\[\|\\begin{.\{-}}/\='\begin{' . a:env . '}'/
     else
-	s/\$\$\|\\end{.\{-}}/\='\\end{' . a:env . '}'/
+	s/\$\$\|\\end{.\{-}}/\='\end{' . a:env . '}'/
 	call search('\$\$\|\\begin{','b')
-	s/\$\$\|\\begin{.\{-}}/\='\\begin{' . a:env . '}'/
+	s/\$\$\|\\begin{.\{-}}/\='\begin{' . a:env . '}'/
     endif
     +
     if a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\|gather\)$'
