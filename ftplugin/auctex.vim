@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	July 30, 2010
-" Version:  2.2.6
+" Last Change:	October 7, 2011
+" Version:  2.2.7
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -957,8 +957,8 @@ map <buffer><silent> gw :call <SID>TeX_par()<CR>
 " In the third, type <M-v>, you're asked for a character to be capitalized.
 " inoremap <buffer> <M-v> \mathbf{}<Left>
 " inoremap <buffer> <Insert>b \mathbf{}<Left>
-inoremap <buffer> <M-v> <Left>\mathbf{<Right>}<Esc>hvUla
-inoremap <buffer> <Insert>b <Left>\mathbf{<Right>}<Esc>hvUla
+inoremap <buffer> <M-v> <Left>\mathbf{<Right>}<Esc>h~a
+inoremap <buffer> <Insert>b <Left>\mathbf{<Right>}<Esc>h~a
 vnoremap <buffer> <M-v> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 vnoremap <buffer> <Insert>b <C-C>`>a}<Esc>`<i\mathbf{<Esc>
 "function! s:mathbf()
@@ -983,7 +983,7 @@ inoremap <buffer> <M-c> <C-R>=<SID>MathCal()<CR>
 inoremap <buffer> <Insert>c <C-R>=<SID>MathCal()<CR>
 function! s:MathCal()
     if getline('.')[col('.')-2] =~ '[a-zA-Z0-9]'
-	return "\<Left>\\mathcal{\<Right>}\<Esc>hvUla"
+	return "\<Left>\\mathcal{\<Right>}\<Esc>h~a"
     else
 	return "\\cite{}\<Left>"
     endif
@@ -991,7 +991,7 @@ endfunction
 "function! s:mathcal()
 "    echo 'Mathcal: '
 "    let c = nr2char(getchar())
-"    return "\\mathcal{".c."}\<Esc>hvUla"
+"    return "\\mathcal{".c."}\<Esc>h~a"
 "endfunction
 "inoremap <buffer> <M-c> <C-R>=<SID>mathcal()<CR>
 "inoremap <buffer> <Insert>c <C-R>=<SID>mathcal()<CR>

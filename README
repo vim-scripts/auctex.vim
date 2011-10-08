@@ -46,7 +46,8 @@ In normal mode, K runs latex, takes you to the position of the first error (if a
 and displays the error message with highlighting.
 
 To get \mathbf{R}, type r<Insert>b.  To get \mathcal{R}, type r<Insert>c. 
-<Insert>s produces \sqrt{}.
+<Insert>s produces \sqrt{}.  Capital letters are more common, but you can
+still get \mathbf{x} by typing X<Insert>b.  Same for \mathcal.
 
 Some macros are polymorphic.  For instance, when preceded by bracket, 
 <Insert>l will insert \left..\right around the brackets.  Otherwise it 
