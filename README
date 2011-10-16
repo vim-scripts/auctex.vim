@@ -22,7 +22,7 @@ already there in the file.  You have to provide these templates yourself.
 
 In insert mode, F1 - F5 will insert environments such as \begin{..} \end{..}.
 
-S-F1 through S-F5 will alter existing environments.
+C-S-F1 through C-S-F5 will alter existing environments.
 
 (), $$, [], \[\], {}, \{\}, && are inserted in matching pairs.
 

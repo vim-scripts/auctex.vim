@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	October 7, 2011
-" Version:  2.2.7
+" Last Change:	October 16, 2011
+" Version:  2.2.8
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -574,14 +574,14 @@ inoremap <buffer><silent> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
 inoremap <buffer><silent> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
 inoremap <buffer><silent> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
-noremap <buffer><silent> <S-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
-inoremap <buffer><silent> <S-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>
-noremap <buffer><silent> <S-F2> :silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer><silent> <S-F2> <Esc>:silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-noremap <buffer><silent> <S-F3> :silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-inoremap <buffer><silent> <S-F3> <Esc>:silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
-noremap <buffer><silent> <S-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
-inoremap <buffer><silent> <S-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer><silent> <C-S-F1> :silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR>i
+inoremap <buffer><silent> <C-S-F1> <Esc>:silent call <SID>Change('equation', 1, '&\\|\\lefteqn{\\|\\nonumber\\|\\\\', 0)<CR><Esc>i
+noremap <buffer><silent> <C-S-F2> :silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> <C-S-F2> <Esc>:silent call <SID>CFTwo(<SID>AmsLatex(b:AMSLatex))<CR>
+noremap <buffer><silent> <C-S-F3> :silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+inoremap <buffer><silent> <C-S-F3> <Esc>:silent call <SID>CFThree(<SID>AmsLatex(b:AMSLatex))<CR>i
+noremap <buffer><silent> <C-S-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
+inoremap <buffer><silent> <C-S-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
 inoremap <buffer><silent> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
 inoremap <buffer><silent> <F7> \textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
@@ -595,8 +595,8 @@ inoremap <buffer><silent> <F5> <Esc>:call <SID>DoEnvironment()<CR>
 
 " Due to Ralf Arens <ralf.arens@gmx.net>
 "inoremap <buffer> <F5> <C-O>:call <SID>PutEnvironment(input('Environment? '))<CR>
-inoremap <buffer><silent> <S-F5> <C-O>:call <SID>ChangeEnvironment(input('Environment? '))<CR>
-noremap <buffer><silent> <S-F5> :call <SID>ChangeEnvironment(input('Environment? '))<CR>
+inoremap <buffer><silent> <C-S-F5> <C-O>:call <SID>ChangeEnvironment(input('Environment? '))<CR>
+noremap <buffer><silent> <C-S-F5> :call <SID>ChangeEnvironment(input('Environment? '))<CR>
 
 " }}}
 
