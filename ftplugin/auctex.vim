@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	October 16, 2011
-" Version:  2.2.8
+" Last Change:	May 21, 2012
+" Version:  2.2.9
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -153,7 +153,6 @@ function! s:TexInsertTabWrapper(direction)
 	    return "\<Esc>"
 	endif
     elseif match(strpart(line,0,column),'\\cite{[^}]*$') != -1
-	let m = matchstr(strpart(line,0,column),'[^{]*$')
 	let tmp = tempname()
         execute "write! ".tmp
         execute "split ".tmp
@@ -163,9 +162,11 @@ function! s:TexInsertTabWrapper(direction)
 	    execute "below split ".tmp
 	    call search('\\begin{thebibliography}')
 	    normal kdgg
-	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>BBLCiteInsertion('\\bibitem')<CR>a
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion('\\bibitem')<CR>a
+	    vnoremap <buffer> <RightRelease> <C-c><Left>:call <SID>CommaCiteInsertion('\\bibitem')<CR>
 	    noremap <buffer> <CR> :call <SID>CiteInsertion('\\bibitem')<CR>a
-	    noremap \<buffer> q :bwipeout!<CR>i
+	    noremap <buffer> , :call <SID>CommaCiteInsertion('\\bibitem')<CR>
+	    noremap <buffer> q :bwipeout!<CR>f}i
 	    return "\<Esc>"
 	else
 	    let l = search('\\bibliography{')
@@ -203,18 +204,12 @@ function! s:TexInsertTabWrapper(direction)
 		    endif
 		endwhile
 
-		if file_exists == 1
-		    if strlen(m) != 0
-			%g/author\c/call <SID>BibPrune(m)
-		    endif
-		    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion("@")<CR>a
-		    noremap <buffer> <CR> :call <SID>CiteInsertion("@")<CR>a
-		    noremap \<buffer> q :bwipeout!<CR>i
-		    return "\<Esc>"
-		else
-		    bwipeout!
-		    return ''
-		endif
+		noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion("@")<CR>a
+		vnoremap <buffer> <RightRelease> <C-c><Left>:call <SID>CommaCiteInsertion("@")<CR>
+		noremap <buffer> <CR> :call <SID>CiteInsertion("@")<CR>a
+		noremap <buffer> , :call <SID>CommaCiteInsertion("@")<CR>
+		noremap <buffer> q :bwipeout!<CR>i
+		return "\<Esc>"
 
 	    endif
 	endif
@@ -299,26 +294,7 @@ function! s:RefInsertion(x)
 endfunction
 
 " Inspired by RefTex
-function! s:OldRefInsertion()
-    normal 0y$
-    bwipeout!
-    let thisline = getline('.')
-    let thiscol  = col('.')
-    if thisline[thiscol-1] == '{'
-	normal p
-    else
-	normal P
-	if thisline[thiscol-1] == '}'
-	    normal l
-	    if thisline[thiscol] == ')'
-		normal l
-	    endif
-	endif
-    endif
-endfunction
-
-" Inspired by RefTex
-" Get citations from the .bib file or from the bibitem entries.
+" Get one citation from the .bib file or from the bibitem entries.
 function! s:CiteInsertion(x)
     +
     "if search('@','b') != 0
@@ -329,34 +305,26 @@ function! s:CiteInsertion(x)
 	    normal f{lyt}
 	endif
         bwipeout!
-        let thisline = getline('.')
-        let thiscol  = col('.')
-        if thisline[thiscol-1] == '{'
-	    normal p
-        else
-	    if thisline[thiscol-2] == '{'
-	         normal P
-	    else
-	         normal T{"_dt}P
-	    endif
-	    normal l
-        endif
+	normal Pf}
     else
         bwipeout!
     endif
 endfunction
 
-function! s:BibPrune(m)
-    if getline(line('.')) !~? a:m
-        ?@
-        let lfirst = line('.')
-        /@
-        let lsecond = line('.')
-        if lfirst < lsecond
-	    execute lfirst.','.(lsecond-1).'delete'
-        else
-	    execute lfirst.',$delete'
-        endif
+" Inspired by RefTex
+" Get one citation from the .bib file or from the bibitem entries
+" and be ready to get more.
+function! s:CommaCiteInsertion(x)
+    +
+    if search(a:x, 'b') != 0
+	if a:x == "@"
+	    normal f{lyt,
+	else
+	    normal f{lyt}
+	endif
+	normal Pa,f}
+    else
+        bwipeout!
     endif
 endfunction
 
