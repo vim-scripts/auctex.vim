@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	May 21, 2012
-" Version:  2.2.9
+" Last Change:	May 24, 2012
+" Version:  2.2.10
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -152,7 +152,7 @@ function! s:TexInsertTabWrapper(direction)
 	    noremap <buffer> q :bwipeout!<CR>i
 	    return "\<Esc>"
 	endif
-    elseif match(strpart(line,0,column),'\\cite{[^}]*$') != -1
+    elseif strpart(line,column-6,6) == '\cite{'
 	let tmp = tempname()
         execute "write! ".tmp
         execute "split ".tmp
@@ -216,7 +216,7 @@ function! s:TexInsertTabWrapper(direction)
     elseif dollar == 1   " If you're in a $..$ environment
 	if ending[0] =~ ')\|]\||'
 	    return "\<Right>"
-	elseif ending =~ '^\\}'
+	elseif ending =~ '^\\}\|\\|'
 	    return "\<Right>\<Right>"
 	elseif ending =~ '^\\right\\'
 	    return "\<Esc>8la"
@@ -235,7 +235,7 @@ function! s:TexInsertTabWrapper(direction)
 	    return "\<Esc>f&a"
         elseif ending[0] =~ ')\|]\||'
 	    return "\<Right>"
-	elseif ending =~ '^\\}'
+	elseif ending =~ '^\\}\|\\|'
 	    return "\<Right>\<Right>"
 	elseif ending =~ '^\\right\\'
 	    return "\<Esc>8la"
