@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	May 24, 2012
-" Version:  2.2.10
+" Last Change:	July 6, 2012
+" Version:  2.2.11
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -85,8 +85,6 @@ noremap <buffer> <C-LeftMouse> :execute "!xdvi -name -xdvi -sourceposition ".lin
 " This was inspired by the emacs package Reftex.
 
 inoremap <buffer><silent> <Tab> <C-R>=<SID>TexInsertTabWrapper('backward')<CR>
-inoremap <buffer><silent> <M-Space> <C-R>=<SID>TexInsertTabWrapper('backward')<CR>
-inoremap <buffer><silent> <C-Space> <C-R>=<SID>TexInsertTabWrapper('forward')<CR>
 
 function! s:TexInsertTabWrapper(direction) 
 
@@ -353,9 +351,6 @@ execute "map <buffer> <F4> :if strpart(getline(1),0,9) != \"\\\\document\"<CR>0r
 " Run Latex;  change these bindings if you like.
 noremap <buffer><silent> K :call <SID>RunLatex()<CR><Esc>:!pkill -USR1 xdvi<CR><Esc>
 noremap <buffer><silent> <C-K> :call <SID>NextTexError()<CR>
-noremap <buffer><silent> <S-Tab> :call <SID>NextTexError()<CR>
-noremap <buffer><silent> <C-Tab> :call <SID>RunLatex()<CR><Esc>
-inoremap <buffer><silent> <C-Tab> <C-O>:call <SID>RunLatex()<CR><Esc>
 
 noremap <buffer><silent> \lr :call <SID>CheckReferences('Reference', 'ref')<CR><Space>
 noremap <buffer><silent> \lc :call <SID>CheckReferences('Citation', 'cite')<CR><Space>
@@ -376,13 +371,6 @@ vnoremap <buffer><silent> <S-Insert> <C-C>`<v`>s<Space><Esc>mq<C-W>s:e ispell.tm
 "inoremap <buffer> <S-Insert> <Esc>:w<CR>:silent !ispell %<CR>:e %<CR><Space>
 "vnoremap <buffer> <S-Insert> <C-C>'<c'><Esc>:e ispell.tmp<CR>p:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggddyG:bwipeout!<CR>:silent !rm ispell.tmp*<CR>pkdd
 "vnoremap <buffer> <S-Insert> <C-C>`<v`>s<Space><Esc>mq:e ispell.tmp<CR>i<C-R>"<Esc>:w<CR>:silent !ispell %<CR>:e %<CR><CR>ggVG<Esc>`<v`>s<Esc>:bwipeout!<CR>:!rm ispell.tmp*<CR>`q"_s<C-R>"<Esc>
-
-" Find Latex Errors
-" To find the tex error, first run Latex (see the 2 previous maps).
-" If there is an error, press "x" or "r" to stop the Tex processing.
-" Then press Shift-Tab to go to the position of the error.
-noremap <buffer><silent> <S-Tab> :call <SID>NextTexError()<CR><Space>
-inoremap <buffer><silent> <S-Tab> <Esc>:call <SID>NextTexError()<CR><Space>
 
 " }}}
 
@@ -538,7 +526,6 @@ endfunction
 
 inoremap <buffer><silent> <F1> \begin{equation}<CR>\label{}<CR><CR>\end{equation}<Esc>2k$i
 inoremap <buffer><silent> <F2> <C-R>=<SID>FTwo(<SID>AmsLatex(b:AMSLatex))<CR>
-"inoremap <buffer> <F2> <C-R>=<SID>FTwo(0)<CR>
 inoremap <buffer><silent> <F3> <C-R>=<SID>FThree(<SID>AmsLatex(b:AMSLatex))<CR>
 inoremap <buffer><silent> <F4> <C-R>=<SID>FFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
@@ -559,7 +546,7 @@ inoremap <buffer><silent> <F7> \textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
 " \begin{environment} \end{environment}
 " But, typing <F5> at the beginning of the line results in a prompt
 " for the name of the environment.
-inoremap <buffer><silent> <F5> <Esc>:call <SID>DoEnvironment()<CR>
+inoremap <buffer><silent> <F5> <C-O>:call <SID>DoEnvironment()<CR>
 
 " Due to Ralf Arens <ralf.arens@gmx.net>
 "inoremap <buffer> <F5> <C-O>:call <SID>PutEnvironment(input('Environment? '))<CR>
@@ -692,7 +679,6 @@ function! s:DoEnvironment()
     startinsert
 endfunction
 
-" The following function was improved by Peppe Guldberg and Torsten Wolf.
 function! s:SetEnvironment(env) 
   let indent = strpart(a:env, 0, match(a:env, '\S')) 
   let env = strpart(a:env, strlen(indent))
@@ -702,18 +688,21 @@ function! s:SetEnvironment(env)
   normal $
   if env == 'array'
     -s/$/{}/
-    " The "$hl" magic here places the cursor at the last character
-    " and not after it as "$" would.
-    normal $hl
+    normal $
+    startinsert
   elseif env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\|gather\)$'
     put!=indent . '\label{}'
     normal! f}
+    startinsert
+  elseif env =~# '^\(description\|enumerate\|itemize\)$'
+    delete
+    put!=indent . '\item '
+    startinsert!
   endif
-  startinsert
 endfunction
 
-" The following function was improved by Peppe Guldberg and Torsten Wolf.
 function! s:PutEnvironment(indent, env)
+  let indent = strpart(a:env, 0, match(a:env, '\S')) 
   put! =a:indent . '\begin{' . a:env . '}'
   +put =a:indent . '\end{' . a:env . '}'
   normal! k$
@@ -721,6 +710,10 @@ function! s:PutEnvironment(indent, env)
     call <SID>ArgumentsForArray(input("{rlc}? "))
   elseif a:env =~# '^\(theorem\|lemma\|equation\|eqnarray\|align\|multline\|gather\)$'
     execute "normal! O\\label\<C-V>{" . input("Label? ") . "}\<Esc>j"
+  elseif a:env =~# '^\(description\|enumerate\|itemize\)$'
+    delete
+    put!=indent . '\item '
+    startinsert!
   endif
 endfunction
 
