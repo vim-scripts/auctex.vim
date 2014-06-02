@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	July 6, 2012
-" Version:  2.2.11
+" Last Change:	June 2, 2014
+" Version:  2.2.12
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -397,7 +397,7 @@ function! s:NextTexError()
     if search('^l\.\d') == 0
         if search('LaTeX Warning: .* multiply') == 0
 	    bwipeout
-	    call input('No (More) Errors Found.')
+	    normal zz
 	else
 	    syntax clear
 	    syntax match err /^LaTeX Warning: .*/

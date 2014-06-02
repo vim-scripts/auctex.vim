@@ -2,7 +2,12 @@ This is a mirror of http://www.vim.org/scripts/script.php?script_id=162
 
 This is a large collection of Latex macros, with inspiration
 from the emacs package "auctex", among other places.  
-Read the file for details;  I have written many comments.  
+Read the file for details;  I have written many comments.
+
+You should freely modify these macros.  Most of them are  
+indepent, so nothing will break.  In some places I've provided
+alternate versions which are commented out.  If you have good 
+ideas, contact me and I'll incorporate them.
 
 By popular demand, here is a more extensive description of
 the key bindings:
