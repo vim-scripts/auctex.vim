@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	June 2, 2014
-" Version:  2.2.12
+" Last Change:	June 6, 2014
+" Version:  2.2.13
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -539,7 +539,8 @@ noremap <buffer><silent> <C-S-F4> :silent call <SID>CFFour(<SID>AmsLatex(b:AMSLa
 inoremap <buffer><silent> <C-S-F4> <Esc>:silent call <SID>CFFour(<SID>AmsLatex(b:AMSLatex))<CR>
 
 inoremap <buffer><silent> <F6> \left\{\begin{array}{ll}<CR>&\mbox{$$} \\<CR>&\mbox{}<CR>\end{array}<CR>\right.<Up><Up><Up><Home>
-inoremap <buffer><silent> <F7> \textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
+"inoremap <buffer><silent> <F7> \textbf{Proof.}<CR><CR><CR>\qed<Up><Up>
+inoremap <buffer><silent> <F7> <C-R>=<SID>Proof(<SID>AmsLatex(b:AMSLatex))<CR>
 
 " The next idea came from a contributed NEdit macro.
 " typing the name of the environment followed by <F5> results in 
@@ -597,6 +598,13 @@ function! s:FFour(var)
 	return "\\begin{eqnarray*}\<CR>\<CR>\\end{eqnarray*}\<Up>"
     else
 	return "\\begin{align*}\<CR>\<CR>\\end{align*}\<Up>"
+    endif
+endfunction
+function! s:Proof(var)
+    if a:var == 0
+        return "\\textbf{Proof.}\<CR>\<CR>\<CR>\\qed\<Up>\<Up>"
+    else
+	return "\\begin{proof}\<CR>\<CR>\\end{proof}\<Up>"
     endif
 endfunction
 function! s:CFTwo(var)
@@ -969,8 +977,8 @@ inoremap <buffer> <M-h> \widehat{}<Left>
 inoremap <buffer> <Insert>h \widehat{}<Left>
 
 " Alt-i or Insert-i inserts \item 
-inoremap <buffer> <M-i> \item 
-inoremap <buffer> <Insert>i \item 
+inoremap <buffer> <M-i> <CR>\item 
+inoremap <buffer> <Insert>i <CR>\item 
 
 " Alt-m or Insert-m inserts \mbox{}
 inoremap <buffer> <M-m> \mbox{}<Left>
