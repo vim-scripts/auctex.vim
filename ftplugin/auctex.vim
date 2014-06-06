@@ -2,7 +2,7 @@
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
 " Last Change:	June 6, 2014
-" Version:  2.2.13
+" Version:  2.2.14
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -133,8 +133,8 @@ function! s:TexInsertTabWrapper(direction)
 	    g/.*/normal 3f{lyt}0Pf}D0f\cf{       
 	    execute "write! ".tmp
 
-	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion("aux")<CR>a
-	    noremap <buffer> <CR> :call <SID>RefInsertion("aux")<CR>a
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion("aux")<CR>zza
+	    noremap <buffer> <CR> :call <SID>RefInsertion("aux")<CR>zza
 	    noremap <buffer> q :bwipeout!<CR>i
 	    return "\<Esc>"
 	else
@@ -145,8 +145,8 @@ function! s:TexInsertTabWrapper(direction)
 	    g!/\\label{/delete
 	    %s/.*\\label{//e
 	    %s/}.*//e
-	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion(0)<CR>a
-	    noremap <buffer> <CR> :call <SID>RefInsertion(0)<CR>a
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion(0)<CR>zza
+	    noremap <buffer> <CR> :call <SID>RefInsertion(0)<CR>zza
 	    noremap <buffer> q :bwipeout!<CR>i
 	    return "\<Esc>"
 	endif
@@ -160,9 +160,9 @@ function! s:TexInsertTabWrapper(direction)
 	    execute "below split ".tmp
 	    call search('\\begin{thebibliography}')
 	    normal kdgg
-	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion('\\bibitem')<CR>a
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion('\\bibitem')<CR>zza
 	    vnoremap <buffer> <RightRelease> <C-c><Left>:call <SID>CommaCiteInsertion('\\bibitem')<CR>
-	    noremap <buffer> <CR> :call <SID>CiteInsertion('\\bibitem')<CR>a
+	    noremap <buffer> <CR> :call <SID>CiteInsertion('\\bibitem')<CR>zza
 	    noremap <buffer> , :call <SID>CommaCiteInsertion('\\bibitem')<CR>
 	    noremap <buffer> q :bwipeout!<CR>f}i
 	    return "\<Esc>"
@@ -202,9 +202,9 @@ function! s:TexInsertTabWrapper(direction)
 		    endif
 		endwhile
 
-		noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion("@")<CR>a
+		noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>CiteInsertion("@")<CR>zza
 		vnoremap <buffer> <RightRelease> <C-c><Left>:call <SID>CommaCiteInsertion("@")<CR>
-		noremap <buffer> <CR> :call <SID>CiteInsertion("@")<CR>a
+		noremap <buffer> <CR> :call <SID>CiteInsertion("@")<CR>zza
 		noremap <buffer> , :call <SID>CommaCiteInsertion("@")<CR>
 		noremap <buffer> q :bwipeout!<CR>i
 		return "\<Esc>"
