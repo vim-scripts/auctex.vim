@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	June 6, 2014
-" Version:  2.2.14
+" Last Change:	June 7, 2014
+" Version:  2.2.15
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -130,12 +130,13 @@ function! s:TexInsertTabWrapper(direction)
 	    execute "below split ".tmp
 	    execute "0read ".aux
 	    g!/^\\newlabel{/delete
-	    g/.*/normal 3f{lyt}0Pf}D0f\cf{       
+	    g/^\\newlabel{tocindent/delete
+	    g/./normal 3f{lyt}0Pf}D0f\cf{       
 	    execute "write! ".tmp
 
 	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion("aux")<CR>zza
 	    noremap <buffer> <CR> :call <SID>RefInsertion("aux")<CR>zza
-	    noremap <buffer> q :bwipeout!<CR>i
+	    noremap <buffer> q :bwipeout!<CR>zzi
 	    return "\<Esc>"
 	else
 	    let tmp = tempname()
@@ -147,7 +148,7 @@ function! s:TexInsertTabWrapper(direction)
 	    %s/}.*//e
 	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion(0)<CR>zza
 	    noremap <buffer> <CR> :call <SID>RefInsertion(0)<CR>zza
-	    noremap <buffer> q :bwipeout!<CR>i
+	    noremap <buffer> q :bwipeout!<CR>zzi
 	    return "\<Esc>"
 	endif
     elseif strpart(line,column-6,6) == '\cite{'
@@ -164,7 +165,7 @@ function! s:TexInsertTabWrapper(direction)
 	    vnoremap <buffer> <RightRelease> <C-c><Left>:call <SID>CommaCiteInsertion('\\bibitem')<CR>
 	    noremap <buffer> <CR> :call <SID>CiteInsertion('\\bibitem')<CR>zza
 	    noremap <buffer> , :call <SID>CommaCiteInsertion('\\bibitem')<CR>
-	    noremap <buffer> q :bwipeout!<CR>f}i
+	    noremap <buffer> q :bwipeout!<CR>f}zzi
 	    return "\<Esc>"
 	else
 	    let l = search('\\bibliography{')
@@ -206,7 +207,7 @@ function! s:TexInsertTabWrapper(direction)
 		vnoremap <buffer> <RightRelease> <C-c><Left>:call <SID>CommaCiteInsertion("@")<CR>
 		noremap <buffer> <CR> :call <SID>CiteInsertion("@")<CR>zza
 		noremap <buffer> , :call <SID>CommaCiteInsertion("@")<CR>
-		noremap <buffer> q :bwipeout!<CR>i
+		noremap <buffer> q :bwipeout!<CR>zzi
 		return "\<Esc>"
 
 	    endif
