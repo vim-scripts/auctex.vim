@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	June 7, 2014
-" Version:  2.2.15
+" Last Change:	September 18, 2015
+" Version:  2.2.16
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -420,19 +420,33 @@ function! s:NextTexError()
 	syntax match err /! .*/
 	syn match err /^ l\.\d.*\n.*$/
 	highlight link err ToDo
-	let linenumber = matchstr(getline('.'), '\d\+')
-	let errorposition = col('$') - strlen(linenumber) - 5
-	if errorposition < 1
-	    let command = 'normal! ' . linenumber . "Gzz\<C-W>wzz\<C-W>w"
-	else
-	    let command = 'normal! ' . linenumber . 'G' . errorposition . "lzz\<C-W>wzz\<C-W>w"
-	endif
-	    "Put a space in the .log file so that you can see where you were,
-	    "and move on to the next latex error.
-	s/^/ /
-	write
-	wincmd x
-	execute command
+        let thisline = getline('.')
+	let linenumber = matchstr(thisline, '\d\+')
+        let endofline = strpart(thisline, 3 + strlen(linenumber))
+
+        if strpart(endofline, 0, 3) == '...'
+            let newend = strpart(endofline, 3)
+                "Put a space in the .log file so that you can see where you were,
+                "and move on to the next latex error.
+            s/^/ /
+            write
+            wincmd x
+            let errorposition = stridx(getline(linenumber), newend) + strlen(endofline) - 4
+        else
+            let errorposition = col('$') - strlen(linenumber) - 5
+                "Put a space in the .log file so that you can see where you were,
+                "and move on to the next latex error.
+            s/^/ /
+            write
+            wincmd x
+        endif
+
+        if errorposition < 1
+            execute 'normal! ' . linenumber . "Gzz\<C-W>wzz\<C-W>w"
+        else
+            execute 'normal! ' . linenumber . 'G' . errorposition . "lzz\<C-W>wzz\<C-W>w"
+        endif
+
     endif
 endfunction
 
