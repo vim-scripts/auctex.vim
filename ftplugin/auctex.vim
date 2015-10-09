@@ -1,8 +1,8 @@
 " Vim filetype plugin
 " Language:	LaTeX
 " Maintainer: Carl Mueller, math at carlm e4ward c o m
-" Last Change:	September 18, 2015
-" Version:  2.2.16
+" Last Change:	October 9, 2015
+" Version:  2.2.17
 " Website: http://www.math.rochester.edu/people/faculty/cmlr/Latex/index.html
 
 " "========================================================================="
@@ -146,8 +146,8 @@ function! s:TexInsertTabWrapper(direction)
 	    g!/\\label{/delete
 	    %s/.*\\label{//e
 	    %s/}.*//e
-	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion(0)<CR>zza
-	    noremap <buffer> <CR> :call <SID>RefInsertion(0)<CR>zza
+	    noremap <buffer> <LeftRelease> <LeftRelease>:call <SID>RefInsertion("")<CR>zza
+	    noremap <buffer> <CR> :call <SID>RefInsertion("")<CR>zza
 	    noremap <buffer> q :bwipeout!<CR>zzi
 	    return "\<Esc>"
 	endif
@@ -279,16 +279,9 @@ function! s:RefInsertion(x)
     bwipeout!
     let thisline = getline('.')
     let thiscol  = col('.')
-    if thisline[thiscol-1] == '{'
-	normal p
-    else
-	normal P
-	if thisline[thiscol-1] == '}'
-	    normal l
-	    if thisline[thiscol] == ')'
-		normal l
-	    endif
-	endif
+    normal Pl
+    if thisline[thiscol] == ')'
+        normal l
     endif
 endfunction
 
